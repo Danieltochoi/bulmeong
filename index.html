@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>불멍 · 물멍 · 별멍 | 잠깐 쉬어가요</title>
-  <meta name="description" content="설치도, 로그인도, 대화도 필요 없습니다. 따뜻한 모닥불(불멍), 고요한 연못(물멍), 쏟아지는 밤하늘(별멍)에 둘러앉아 잠시 쉬어가세요." />
+  <meta name="description" content="설치도, 로그인도, 대화도 필요 없습니다. 소나무 숲 모닥불(불멍), 스위스 에메랄드 호수(물멍), 강원도 별빛 계곡(별멍)에서 고요한 평화(Inner Peace)를 느껴보세요." />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Pretendard:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -13,7 +13,7 @@
 <body>
   <!-- Main Interactive WebGL 3D Canvas -->
   <canvas id="campfireCanvas"></canvas>
-  <!-- 3D Projected Floating Labels Layer (Nicknames, Bubbles, Burning Notes) -->
+  <!-- 3D Projected Floating Labels Layer -->
   <div id="labels3DContainer" class="labels-3d-container"></div>
 
   <!-- Subtle Ambient Vignette & Color Overlay -->
@@ -22,29 +22,30 @@
   <!-- Intro / Entry Modal (No login, 1-click entry to unlock Web Audio) -->
   <div id="entryOverlay" class="entry-overlay">
     <div class="entry-card">
-      <div class="entry-ember-icon">🔥💧⭐</div>
+      <div class="entry-ember-icon">🔥🏔️🌌</div>
       <h1 class="entry-title">불멍 · 물멍 · 별멍</h1>
-      <p class="entry-subtitle">말없이 함께 둘러앉는 디지털 쉼터, 잠깐 쉬어가요</p>
+      <p class="entry-subtitle">마음이 고요해지는 디지털 안식처, 잠깐 쉬어가요</p>
       <div class="entry-rules">
-        <div class="rule-item"><span>🤫</span> 대화(채팅)는 없어요. 가벼운 손인사와 온기만 나눕니다.</div>
-        <div class="rule-item"><span>🔥</span> <strong>불멍</strong>(장작·마시멜로), <strong>물멍</strong>(소원 연등), <strong>별멍</strong>(망원경·별똥별)을 자유롭게 오가세요.</div>
-        <div class="rule-item"><span>☕</span> 보온병에서 따뜻한 커피를 따라 이웃에게 건넬 수 있어요.</div>
+        <div class="rule-item"><span>🔥</span> <strong>불멍 (소나무 숲 모닥불)</strong>: 통나무에 둘러앉아 불꽃에 손을 녹이고 노릇하게 마시멜로를 구워요.</div>
+        <div class="rule-item"><span>🏔️</span> <strong>물멍 (스위스 알프스 호수)</strong>: 낮과 밤, 만년설이 비치는 호숫가 캠핑 의자와 풀밭에 앉아 윤슬을 바라봐요.</div>
+        <div class="rule-item"><span>🌌</span> <strong>별멍 (강원도 별빛 능선)</strong>: 새까만 밤하늘 쏟아지는 별자리 아래 캠핑 매트에 가만히 누워 별똥별을 봐요.</div>
+        <div class="rule-item"><span>🤲</span> 옆자리 사람에게 걸어가 따뜻한 커피와 마시멜로를 조심스레 건네고 받아보세요.</div>
       </div>
       <div class="entry-identity-preview">
         <span>오늘 당신의 이름:</span>
         <strong id="previewNickname">따뜻한 모닥불</strong>
         <button id="rerollNameBtn" class="icon-btn" title="다른 이름 받기">↻</button>
       </div>
-      <button id="enterCampBtn" class="enter-btn">쉼터로 걸어가기</button>
+      <button id="enterCampBtn" class="enter-btn">조용히 쉬러 들어가기</button>
     </div>
   </div>
 
-  <!-- Top Status Bar (Sansa style: Room, Mode Switcher, Online count, My Info) -->
+  <!-- Top Status Bar -->
   <header class="top-bar hidden" id="topBar">
     <div class="top-left">
-      <button id="roomSelectBtn" class="glass-pill room-pill" title="모닥불·물멍·별멍 공간 이동">
+      <button id="roomSelectBtn" class="glass-pill room-pill" title="테마 및 채널 이동">
         <span class="status-dot"></span>
-        <span id="currentRoomName">🔥 불멍 · 소나무 숲터</span>
+        <span id="currentRoomName">🔥 불멍 · 소나무 숲</span>
         <span class="sub-tag" id="currentRegionTag">APAC · #0</span>
         <span class="chevron">▾</span>
       </button>
@@ -59,8 +60,8 @@
     <div class="top-center">
       <div class="concept-tabs" id="conceptTabs">
         <button class="concept-tab active" data-room="fire-01">🔥 불멍</button>
-        <button class="concept-tab" data-room="water-02">💧 물멍</button>
-        <button class="concept-tab" data-room="star-03">⭐ 별멍</button>
+        <button class="concept-tab" data-room="water-02">🏔️ 물멍 (스위스 호수)</button>
+        <button class="concept-tab" data-room="star-03">🌌 별멍 (강원도 밤하늘)</button>
       </div>
     </div>
 
@@ -78,13 +79,25 @@
     </div>
   </header>
 
-  <!-- Room Selector Dropdown Modal (Sansa Multi-Server / Instance / Region Switcher) -->
+  <!-- Gentle Incoming Gift Offer Banner (When a neighbor approaches and offers coffee or marshmallow) -->
+  <div id="giftOfferBanner" class="gift-offer-banner hidden">
+    <div class="gift-offer-text">
+      <span class="gift-offer-icon" id="giftOfferIcon">☕</span>
+      <span id="giftOfferMessage"><strong>다정한 불씨</strong>님이 두 손으로 따뜻한 커피를 건넵니다.</span>
+    </div>
+    <div class="gift-offer-btns">
+      <button id="acceptGiftBtn" class="accept-gift-btn">두 손으로 받기 🙏</button>
+      <button id="declineGiftBtn" class="decline-gift-btn">괜찮아요</button>
+    </div>
+  </div>
+
+  <!-- Room Selector Dropdown Modal -->
   <div id="roomModal" class="floating-panel room-panel hidden">
     <div class="panel-header">
-      <h3>🌐 테마 공간 & 서버 채널 이동</h3>
+      <h3>🌐 쉼터 공간 & 채널 이동</h3>
       <button class="close-panel-btn" data-close="roomModal">✕</button>
     </div>
-    <p class="panel-desc">불멍·물멍·별멍 테마와 채널(Instance)을 골라 다른 사람들과 함께 쉬어갈 수 있어요.</p>
+    <p class="panel-desc">원하는 자연 풍경과 서버 채널(Instance)을 골라 고요한 휴식을 즐겨보세요.</p>
 
     <div class="server-Selectors">
       <div class="selector-row">
@@ -111,23 +124,23 @@
         <div class="room-icon">🔥</div>
         <div class="room-info">
           <strong>불멍 · 소나무 숲 모닥불</strong>
-          <span>타닥거리는 장작불과 따뜻한 마시멜로·불꽃놀이</span>
+          <span>타닥거리는 장작불과 따뜻한 온기, 마시멜로와 보온병 커피</span>
         </div>
         <div class="room-occupancy" data-occ="fire-01">접속 중</div>
       </button>
       <button class="room-item" data-room="water-02" data-theme="water">
-        <div class="room-icon">💧</div>
+        <div class="room-icon">🏔️</div>
         <div class="room-info">
-          <strong>물멍 · 달빛 거울 연못</strong>
-          <span>찰랑이는 물결과 반딧불이, 물 위에 띄우는 소원 연등</span>
+          <strong>물멍 · 스위스 알프스 에메랄드 호수</strong>
+          <span>만년설 봉우리와 잔잔한 호숫가 캠핑 의자·수풀에서 바라보는 물결</span>
         </div>
         <div class="room-occupancy" data-occ="water-02">원활</div>
       </button>
       <button class="room-item" data-room="star-03" data-theme="star">
-        <div class="room-icon">⭐</div>
+        <div class="room-icon">🌌</div>
         <div class="room-info">
-          <strong>별멍 · 은하수 천문 언덕</strong>
-          <span>쏟아지는 별똥별과 천체 망원경으로 바라보는 밤하늘</span>
+          <strong>별멍 · 강원도 산골짜기 별빛 캠핑</strong>
+          <span>새까만 밤하늘 수천 개의 별과 별자리, 매트에 누워 보는 별똥별</span>
         </div>
         <div class="room-occupancy" data-occ="star-03">원활</div>
       </button>
@@ -135,34 +148,34 @@
         <div class="room-icon">⛺</div>
         <div class="room-info">
           <strong>우중 불멍 · 빗소리 타프 아래</strong>
-          <span>텐트 위를 두드리는 빗방울 소리와 아늑한 모닥불</span>
+          <span>텐트 위를 두드리는 차분한 빗소리와 모닥불</span>
         </div>
         <div class="room-occupancy" data-occ="rain-04">원활</div>
       </button>
     </div>
 
     <div class="share-room-footer">
-      <button id="copyRoomLinkBtn" class="secondary-btn">🔗 현재 쉼터 서버 주소 복사하기 (친구 초대)</button>
+      <button id="copyRoomLinkBtn" class="secondary-btn">🔗 현재 쉼터 주소 복사하기 (친구와 함께 쉬기)</button>
     </div>
   </div>
 
   <!-- Sound Mixer Panel -->
   <div id="soundModal" class="floating-panel sound-panel hidden">
     <div class="panel-header">
-      <h3>🎧 실시간 ASMR 사운드스케이프</h3>
+      <h3>🎧 자연의 소리 (Inner Peace ASMR)</h3>
       <button class="close-panel-btn" data-close="soundModal">✕</button>
     </div>
-    <p class="panel-desc">Web Audio 신디사이저로 실시간 생성되는 자연의 소리입니다.</p>
+    <p class="panel-desc">공간에 맞춰 실시간으로 빚어지는 평온한 자연의 소리입니다.</p>
     <div class="slider-group">
       <label>
-        <span>🔥 모닥불 장작 / 💧 물결 소리</span>
+        <span>🔥 장작 타닥임 / 🌊 호수 물결 소리</span>
         <span id="valFire">80%</span>
       </label>
       <input type="range" id="volFire" min="0" max="100" value="80" />
     </div>
     <div class="slider-group">
       <label>
-        <span>🍃 밤바람과 공간 환경음</span>
+        <span>🍃 산바람과 수풀 스치는 소리</span>
         <span id="valWind">45%</span>
       </label>
       <input type="range" id="volWind" min="0" max="100" value="45" />
@@ -176,110 +189,59 @@
     </div>
     <div class="slider-group">
       <label>
-        <span>🦗 풀벌레 & 밤의 공명(Singing Bowl)</span>
-        <span id="valNight">50%</span>
+        <span>🦗 풀벌레 & 명상 싱잉볼(Singing Bowl)</span>
+        <span id="valNight">55%</span>
       </label>
-      <input type="range" id="volNight" min="0" max="100" value="50" />
+      <input type="range" id="volNight" min="0" max="100" value="55" />
     </div>
     <div class="sound-footer">
       <button id="muteAllBtn" class="secondary-btn">전체 음소거 토글</button>
     </div>
   </div>
 
-  <!-- Worry Burn Modal (고민 태우기 / 소원 띄우기) -->
+  <!-- Worry Burn / Inner Peace Modal -->
   <div id="worryModal" class="modal-backdrop hidden">
     <div class="worry-card">
       <div class="panel-header">
-        <h3 id="worryModalTitle">📝 오늘 내려놓고 싶은 생각 태우기</h3>
+        <h3 id="worryModalTitle">📝 마음속 무거운 생각 내려놓기</h3>
         <button class="close-panel-btn" data-close="worryModal">✕</button>
       </div>
       <p class="worry-desc">
-        적어주신 글은 서버나 어디에도 저장되지 않으며, 오직 당신의 화면에서만 타오르거나 밤하늘 별빛으로 사라집니다.
+        적어주신 글은 어디에도 저장되지 않으며, 오직 당신의 화면에서만 조용히 타오르거나 호수·별빛 속으로 사라집니다.
       </p>
-      <textarea id="worryInput" maxlength="120" placeholder="마음속에 걸려 있던 걱정, 후회, 혹은 소원을 편하게 적어보세요..."></textarea>
+      <textarea id="worryInput" maxlength="120" placeholder="오늘 나를 지치게 했던 생각이나 소원을 조용히 적어보세요..."></textarea>
       <div class="worry-footer">
         <span id="worryCount">0 / 120자</span>
-        <button id="burnWorrySubmitBtn" class="primary-fire-btn">보내기 ✨</button>
+        <button id="burnWorrySubmitBtn" class="primary-fire-btn">내려놓기 ✨</button>
       </div>
     </div>
   </div>
 
   <!-- Toast Overlay -->
   <div id="ritualToast" class="ritual-toast hidden">
-    <span id="ritualToastText">반갑게 손인사를 건넸습니다.</span>
+    <span id="ritualToastText">평온한 휴식을 시작합니다.</span>
   </div>
 
   <!-- Zen Mode Exit Floating Hint -->
   <button id="exitZenBtn" class="exit-zen-btn hidden">화면을 눌러 UI 다시 보기</button>
 
-  <!-- Bottom Action Dock -->
+  <!-- Bottom Action Dock (Dynamically tailored per Concept: 불멍 / 물멍 / 별멍) -->
   <nav class="bottom-dock hidden" id="bottomDock">
-    <!-- Quick Mode Switcher Pill for Mobile & PC -->
     <div class="dock-stats">
       <button class="stat-chip mode-chip active" data-switch-room="fire-01">🔥 불멍</button>
-      <button class="stat-chip mode-chip" data-switch-room="water-02">💧 물멍</button>
-      <button class="stat-chip mode-chip" data-switch-room="star-03">⭐ 별멍</button>
+      <button class="stat-chip mode-chip" data-switch-room="water-02">🏔️ 물멍</button>
+      <button class="stat-chip mode-chip" data-switch-room="star-03">🌌 별멍</button>
       <div class="stat-chip" title="내가 머문 시간">
         <span class="stat-label">머문 시간</span>
         <strong id="stayTimer">00:00</strong>
       </div>
     </div>
 
-    <div class="dock-actions">
-      <button class="action-btn" id="actWave" data-action="wave">
-        <span class="act-icon">👋</span>
-        <span class="act-label">인사하기</span>
-        <span class="act-key">1</span>
-      </button>
-      <button class="action-btn" id="actHands" data-action="hands">
-        <span class="act-icon" id="poseMainIcon">🤲</span>
-        <span class="act-label" id="poseMainLabel">손 녹이기</span>
-        <span class="act-key">2</span>
-      </button>
-      <button class="action-btn highlight-btn" id="actMainRitual">
-        <span class="act-icon" id="ritualMainIcon">🪵</span>
-        <span class="act-label" id="ritualMainLabel">장작 넣기</span>
-        <span class="act-key">3</span>
-      </button>
-      <button class="action-btn" id="actRoast" data-action="roast">
-        <span class="act-icon">🍡</span>
-        <span class="act-label">마시멜로</span>
-        <span class="act-key">4</span>
-      </button>
-      <button class="action-btn" id="actShareMallow">
-        <span class="act-icon">🎁</span>
-        <span class="act-label">마시멜로 주기</span>
-        <span class="act-key">5</span>
-      </button>
-      <button class="action-btn" id="actShareThermos" data-action="thermos">
-        <span class="act-icon">☕</span>
-        <span class="act-label">보온병 커피 주기</span>
-        <span class="act-key">6</span>
-      </button>
-      <button class="action-btn" id="actTelescope" data-action="telescope">
-        <span class="act-icon">🔭</span>
-        <span class="act-label">망원경 별보기</span>
-        <span class="act-key">7</span>
-      </button>
-      <button class="action-btn" id="actSparkler" data-action="sparkler">
-        <span class="act-icon">🎇</span>
-        <span class="act-label">불꽃놀이</span>
-        <span class="act-key">8</span>
-      </button>
-      <button class="action-btn" id="actMagicPowder">
-        <span class="act-icon">✨</span>
-        <span class="act-label">오로라/반딧불</span>
-        <span class="act-key">9</span>
-      </button>
-      <button class="action-btn special-btn" id="actBurnWorry">
-        <span class="act-icon">📜</span>
-        <span class="act-label">고민/소원</span>
-        <span class="act-key">0</span>
-      </button>
-    </div>
+    <!-- Concept-specific Action Buttons injected dynamically by app.js -->
+    <div class="dock-actions" id="dockActionsContainer"></div>
 
-    <div class="dock-hint">
-      바닥 터치/클릭: 걸어서 산책 · 빈 통나무 클릭: 앉기 · 다른 캠퍼 클릭: 인사/나눔
+    <div class="dock-hint" id="dockHintText">
+      바닥 터치/클릭: 산책하기 · 빈자리 클릭: 앉기 · 다른 사람 클릭: 다가가 인사/나눔
     </div>
   </nav>
 

@@ -10,11 +10,11 @@ const PORT = process.env.PORT || 3000;
 const MAX_SEATS_PER_INSTANCE = 12;
 const rooms = new Map(); // key: "room:instance:region" -> RoomState
 
-function getRoomKey(room = 'pine-01', instance = 0, region = 'apac') {
+function getRoomKey(room = 'fire-01', instance = 0, region = 'apac') {
   return `${room}:${instance}:${region}`;
 }
 
-function getOrCreateRoom(room = 'pine-01', instance = 0, region = 'apac') {
+function getOrCreateRoom(room = 'fire-01', instance = 0, region = 'apac') {
   const key = getRoomKey(room, instance, region);
   if (!rooms.has(key)) {
     rooms.set(key, {
@@ -23,7 +23,8 @@ function getOrCreateRoom(room = 'pine-01', instance = 0, region = 'apac') {
       region,
       fireHeat: 680,
       auroraUntil: 0,
-      clients: new Map() // clientId -> { id, res, name, seatIndex, action, color }
+      waterDayMode: true, // Swiss Lake default: Daytime emerald lake
+      clients: new Map() // clientId -> { id, res, name, seatIndex, action, posture, color }
     });
   }
   return rooms.get(key);
@@ -49,6 +50,7 @@ function getPublicRoomSnapshot(roomState) {
       name: c.name,
       seatIndex: c.seatIndex,
       action: c.action,
+      posture: c.posture || 'sit',
       color: c.color
     });
   }
@@ -64,6 +66,7 @@ function getPublicRoomSnapshot(roomState) {
     region: roomState.region,
     fireHeat: roomState.fireHeat,
     auroraActive: Date.now() < roomState.auroraUntil,
+    waterDayMode: roomState.waterDayMode,
     roomCount: roomState.clients.size,
     totalOnline: totalOnlineAllRooms,
     users
@@ -152,7 +155,8 @@ const server = http.createServer((req, res) => {
       res,
       name,
       seatIndex,
-      action: 'hands',
+      action: 'idle',
+      posture: room === 'star-03' ? 'lie' : (room === 'water-02' ? (seatIndex % 2 === 0 ? 'chair' : 'grass') : 'sit'),
       color
     };
 
@@ -188,12 +192,24 @@ const server = http.createServer((req, res) => {
         if (client) {
           if (data.type === 'pose' && data.action) {
             client.action = data.action;
+            if (data.posture) client.posture = data.posture;
             broadcastToRoom(roomState, 'sync', getPublicRoomSnapshot(roomState));
+          } else if (data.type === 'posture' && data.posture) {
+            client.posture = data.posture;
+            broadcastToRoom(roomState, 'sync', getPublicRoomSnapshot(roomState));
+          } else if (data.type === 'toggleWaterDayNight') {
+            roomState.waterDayMode = typeof data.waterDayMode === 'boolean' ? data.waterDayMode : !roomState.waterDayMode;
+            broadcastToRoom(roomState, 'effect', {
+              effect: 'waterDayNight',
+              waterDayMode: roomState.waterDayMode,
+              actorName: client.name
+            });
           } else if (data.type === 'name' && data.name) {
             client.name = String(data.name).slice(0, 20);
             broadcastToRoom(roomState, 'sync', getPublicRoomSnapshot(roomState));
           } else if (data.type === 'moveSeat' && typeof data.seatIndex === 'number') {
             client.seatIndex = Math.max(0, Math.min(MAX_SEATS_PER_INSTANCE - 1, data.seatIndex));
+            if (data.posture) client.posture = data.posture;
             broadcastToRoom(roomState, 'sync', getPublicRoomSnapshot(roomState));
           } else if (data.type === 'throwLog') {
             roomState.fireHeat = Math.min(1200, roomState.fireHeat + 38);
@@ -216,11 +232,20 @@ const server = http.createServer((req, res) => {
               fromSeat: client.seatIndex,
               targetSeat: data.targetSeat
             });
-          } else if (data.type === 'shareMallow') {
+          } else if (data.type === 'offerGift') {
             broadcastToRoom(roomState, 'effect', {
-              effect: 'shareMallow',
+              effect: 'offerGift',
+              giftType: data.giftType || 'coffee',
               fromSeat: client.seatIndex,
               targetSeat: data.targetSeat,
+              actorName: client.name
+            });
+          } else if (data.type === 'acceptGift') {
+            broadcastToRoom(roomState, 'effect', {
+              effect: 'acceptGift',
+              giftType: data.giftType || 'coffee',
+              fromSeat: data.fromSeat,
+              targetSeat: client.seatIndex,
               actorName: client.name
             });
           } else if (data.type === 'firework') {
@@ -235,16 +260,15 @@ const server = http.createServer((req, res) => {
               fromSeat: client.seatIndex,
               actorName: client.name
             });
-          } else if (data.type === 'shareCoffee') {
-            broadcastToRoom(roomState, 'effect', {
-              effect: 'shareCoffee',
-              fromSeat: client.seatIndex,
-              targetSeat: data.targetSeat,
-              actorName: client.name
-            });
           } else if (data.type === 'floatLantern') {
             broadcastToRoom(roomState, 'effect', {
               effect: 'floatLantern',
+              fromSeat: client.seatIndex,
+              actorName: client.name
+            });
+          } else if (data.type === 'skipStone') {
+            broadcastToRoom(roomState, 'effect', {
+              effect: 'skipStone',
               fromSeat: client.seatIndex,
               actorName: client.name
             });
