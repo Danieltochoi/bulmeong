@@ -944,22 +944,56 @@ button.glass-pill:hover {
   white-space: nowrap;
 }
 
-/* 3D Constellation Labels in Star-gazing Mode */
-.constellation-label-3d {
-  position: absolute;
+.companion-toggle-row {
+  margin-top: 12px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+}
+
+.companion-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-sub);
+  cursor: pointer;
+}
+
+.companion-label input[type="checkbox"] {
+  accent-color: var(--fire-primary);
+  width: 15px;
+  height: 15px;
+  cursor: pointer;
+}
+
+/* Center Notice (Only appears briefly in the middle when needed, never blocks the fire) */
+.center-notice {
+  position: fixed;
+  top: 22%;
+  left: 50%;
   transform: translate(-50%, -50%);
-  color: rgba(210, 228, 255, 0.78);
-  font-family: var(--font-serif);
-  font-size: 11.5px;
-  letter-spacing: 0.06em;
-  padding: 2px 8px;
+  z-index: 30;
+  background: rgba(18, 15, 22, 0.82);
+  border: 1px solid rgba(255, 185, 115, 0.35);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  padding: 11px 22px;
   border-radius: 999px;
-  background: rgba(10, 16, 34, 0.48);
-  border: 1px solid rgba(160, 200, 255, 0.22);
+  font-size: 14px;
+  color: #ffe8c8;
+  font-family: var(--font-serif);
   pointer-events: none;
-  white-space: nowrap;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9);
-  transition: opacity 0.3s ease;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.55);
+  transition: opacity 0.45s ease, transform 0.45s ease;
+  text-align: center;
+  max-width: calc(100vw - 32px);
+}
+
+.center-notice.hidden {
+  opacity: 0 !important;
+  transform: translate(-50%, -40%);
 }
 
 /* Toast & Zen Mode */
@@ -1024,7 +1058,7 @@ button.glass-pill:hover {
     left: 12px !important;
     right: 12px !important;
     width: calc(100vw - 24px);
-    top: 86px;
+    top: 60px;
   }
   .act-key {
     display: none;
@@ -1040,10 +1074,9 @@ button.glass-pill:hover {
     padding: 12px 14px;
     text-align: center;
   }
-  .ritual-toast {
-    top: 90px;
-    width: calc(100% - 32px);
-    text-align: center;
-    white-space: normal;
+  .center-notice {
+    top: 24%;
+    font-size: 13px;
+    padding: 9px 16px;
   }
 }

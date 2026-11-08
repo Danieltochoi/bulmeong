@@ -1,91 +1,32 @@
 /**
- * 불멍 · 물멍 · 별멍 | 3D Inner Peace Sanctuary (Three.js + SSE Multiplayer)
+ * 🔥 불멍 (BULMEONG) — Immersive 3D Campfire Sanctuary
  *
- * 1. 🔥 불멍 (fire-01 / rain-04): 소나무 숲 모닥불, 통나무 다리 굽혀 앉기, 불 가까이 손 녹이기, 마시멜로 굽기, 두 손으로 건네기
- * 2. 🏔️ 물멍 (water-02): 스위스 알프스 만년설 에메랄드 호수, 낮/밤 전환(윤슬/달빛), 캠핑 의자 또는 호숫가 수풀 앉기, 물결 명상
- * 3. 🌌 별멍 (star-03): 강원도 깊은 산골짜기 능선, 새까만 밤하늘 수천 개의 별과 별자리(선+이름), 캠핑 매트에 완전히 눕기/앉기, 망원경, 별똥별
+ * - Focused 100% on pure Campfire meditation (Inner Peace)
+ * - No cluttered 3D floating text tags over logs or heads; clean center notifications only when needed
+ * - Large, expressive 3D character with articulated legs & arms
+ * - Immersive Over-the-Shoulder / 1st-Person POV looking directly into the crackling fire
+ * - Custom GLSL Volumetric Shader flames + rising 3D embers + stacked physical logs
+ * - Natural smooth procedural animations for warming hands, placing logs, roasting marshmallows, pouring thermos coffee, and two-handed sharing
+ * - Honest real-time online user count (optional AI companion toggleable)
  */
 
 // ====================================================
-// 1. IDENTITY & ROOM CONFIG
+// 1. IDENTITY & STATE
 // ====================================================
 const ADJECTIVES = [
   '고요한', '따스한', '평온한', '은은한', '차분한',
-  '깊어가는', '별빛 닮은', '솔향기 나는', '포근한', '잔잔한',
-  '투명한', '다정한', '새벽녘의', '여유로운'
+  '깊어가는', '별빛 닮은', '솔향기 나는', '포근한', '잔잔한'
 ];
 
 const NOUNS = [
-  '모닥불', '솔방울', '윤슬', '별똥별', '통나무',
-  '산들바람', '은하수', '모래알', '보온병', '산장지기',
-  '조약돌', '풀벌레', '초승달', '여행자'
+  '모닥불', '솔방울', '장작불', '불씨', '통나무',
+  '산들바람', '보온병', '산장지기', '풀벌레', '여행자'
 ];
 
 const CAMPER_COLORS = [
-  '#e07a5f', '#6b9080', '#e9c46a', '#8ecae6',
-  '#b5838d', '#f4a261', '#90be6d', '#a8dadc',
-  '#c77dff', '#ff9f1c', '#4ea8de', '#f28482'
+  '#d96b43', '#5c8072', '#dfa84b', '#6ba2b8',
+  '#a66e7a', '#e08748', '#7fa660', '#8c7aa8'
 ];
-
-const ROOM_META = {
-  'fire-01': {
-    name: '🔥 불멍 · 소나무 숲 모닥불',
-    icon: '🔥',
-    theme: 'fire',
-    soundDefaults: { fire: 85, wind: 40, rain: 0, night: 55 }
-  },
-  'water-02': {
-    name: '🏔️ 물멍 · 스위스 알프스 호수',
-    icon: '🏔️',
-    theme: 'water',
-    soundDefaults: { fire: 75, wind: 55, rain: 0, night: 45 }
-  },
-  'star-03': {
-    name: '🌌 별멍 · 강원도 산골짜기 별빛',
-    icon: '🌌',
-    theme: 'star',
-    soundDefaults: { fire: 20, wind: 60, rain: 0, night: 85 }
-  },
-  'rain-04': {
-    name: '⛺ 우중 불멍 · 빗소리 타프 아래',
-    icon: '⛺',
-    theme: 'rain',
-    soundDefaults: { fire: 75, wind: 40, rain: 85, night: 30 }
-  }
-};
-
-// Concept-specific Action Dock configurations for Inner Peace
-const CONCEPT_DOCK_ACTIONS = {
-  fire: [
-    { id: 'wave', icon: '👋', label: '인사하기', key: '1' },
-    { id: 'hands', icon: '🤲', label: '불 가까이 손 녹이기', key: '2' },
-    { id: 'log', icon: '🪵', label: '장작 넣기', key: '3' },
-    { id: 'mallow', icon: '🍡', label: '마시멜로 굽기', key: '4' },
-    { id: 'giveMallow', icon: '🎁', label: '옆사람 마시멜로 건네기', key: '5' },
-    { id: 'giveCoffee', icon: '☕', label: '보온병 커피 건네기', key: '6' },
-    { id: 'sparkler', icon: '🎇', label: '선향불꽃 놀이', key: '7' },
-    { id: 'worry', icon: '📜', label: '고민 태우기', key: '8' }
-  ],
-  water: [
-    { id: 'toggleDayNight', icon: '☀️', label: '낮·밤 전환 (윤슬/달빛)', key: '1' },
-    { id: 'toggleWaterSeat', icon: '🪑', label: '캠핑의자 ↔ 호수 수풀 앉기', key: '2' },
-    { id: 'wave', icon: '👋', label: '인사하기', key: '3' },
-    { id: 'giveCoffee', icon: '☕', label: '보온병 커피 건네기', key: '4' },
-    { id: 'meditate', icon: '🧘', label: '호수 바라보며 명상', key: '5' },
-    { id: 'lantern', icon: '🪷', label: '소원 연등 띄우기', key: '6' },
-    { id: 'skipStone', icon: '🪨', label: '잔잔한 물결 만들기', key: '7' },
-    { id: 'worry', icon: '📜', label: '물결에 마음 흘려보내기', key: '8' }
-  ],
-  star: [
-    { id: 'toggleLieSit', icon: '🛌', label: '매트에 눕기 ↔ 앉기', key: '1' },
-    { id: 'stargaze', icon: '🔭', label: '망원경으로 별 관찰', key: '2' },
-    { id: 'shootingStar', icon: '🌠', label: '별똥별 소원 빌기', key: '3' },
-    { id: 'toggleConstellation', icon: '✨', label: '별자리 선·이름 토글', key: '4' },
-    { id: 'wave', icon: '👋', label: '조용히 인사하기', key: '5' },
-    { id: 'giveCoffee', icon: '☕', label: '보온병 커피 건네기', key: '6' },
-    { id: 'worry', icon: '📜', label: '별빛에 생각 날리기', key: '7' }
-  ]
-};
 
 function generateRandomNickname() {
   const adj = ADJECTIVES[Math.floor(Math.random() * ADJECTIVES.length)];
@@ -93,42 +34,30 @@ function generateRandomNickname() {
   return `${adj} ${noun}`;
 }
 
-function normalizeRoomId(r) {
-  if (r === 'pine-01') return 'fire-01';
-  if (r === 'lake-02') return 'water-02';
-  if (r === 'temple-03') return 'star-03';
-  return ROOM_META[r] ? r : 'fire-01';
-}
-
 const urlParams = new URLSearchParams(window.location.search);
 const state = {
   clientId: sessionStorage.getItem('bm_clientId') || `camper_${Math.random().toString(36).slice(2, 9)}`,
   myNickname: localStorage.getItem('bm_nickname') || generateRandomNickname(),
   myColor: sessionStorage.getItem('bm_color') || CAMPER_COLORS[Math.floor(Math.random() * CAMPER_COLORS.length)],
-  room: normalizeRoomId(urlParams.get('room') || 'fire-01'),
+  room: urlParams.get('room') === 'rain-04' ? 'rain-04' : 'fire-01',
   instance: Number(urlParams.get('instance') || 0),
   region: urlParams.get('region') || 'apac',
   mySeatIndex: 0,
-  myAction: 'idle',
-  myPosture: 'sit', // 'sit' | 'chair' | 'grass' | 'lie'
-  waterDayMode: true, // Swiss lake: true = Sunny Alpine Day, false = Moonlight Night
-  showConstellations: true,
-  fireHeat: 680,
+  myAction: 'hands', // 'hands' | 'mallow' | 'coffee' | 'sparkler' | 'idle'
+  povMode: 'shoulder', // 'shoulder' (내 어깨 너머 몰입) | 'first' (1인칭 불꽃 직관) | 'wide' (전체 둘러보기)
+  enableSoloCompanion: false, // Honest real user count by default!
+  fireHeat: 720,
+  logsAddedCount: 0,
   auroraUntil: 0,
   enteredAt: Date.now(),
   zenMode: false,
+  realUsers: [],
   users: [],
-  pendingGiftOffer: null // { fromSeat, actorName, giftType }
+  pendingGiftOffer: null
 };
 
 sessionStorage.setItem('bm_clientId', state.clientId);
 sessionStorage.setItem('bm_color', state.myColor);
-
-function getConceptType(room = state.room) {
-  if (room === 'water-02') return 'water';
-  if (room === 'star-03') return 'star';
-  return 'fire';
-}
 
 function syncUrlParams() {
   const url = new URL(window.location.href);
@@ -140,16 +69,30 @@ function syncUrlParams() {
 syncUrlParams();
 
 // ====================================================
-// 2. PROCEDURAL WEB AUDIO ENGINE (INNER PEACE ASMR)
+// 2. CENTER NOTIFICATION HELPER (CLEAN & UNOBTRUSIVE)
 // ====================================================
-class InnerPeaceSoundEngine {
+let noticeTimer = null;
+function showCenterNotice(message, durationMs = 2800) {
+  const el = document.getElementById('centerNotice');
+  const txt = document.getElementById('centerNoticeText');
+  if (!el || !txt) return;
+  txt.textContent = message;
+  el.classList.remove('hidden');
+  clearTimeout(noticeTimer);
+  noticeTimer = setTimeout(() => {
+    el.classList.add('hidden');
+  }, durationMs);
+}
+
+// ====================================================
+// 3. WEB AUDIO ASMR ENGINE (CRACKLING OAK FIRE & WIND)
+// ====================================================
+class CampfireAudioEngine {
   constructor() {
     this.ctx = null;
     this.isMuted = false;
-    this.volumes = { fire: 0.8, wind: 0.45, rain: 0.0, night: 0.55 };
+    this.volumes = { fire: 0.85, wind: 0.4, rain: 0.0, night: 0.5 };
     this.nodes = {};
-    this.crackleTimer = null;
-    this.bowlTimer = null;
   }
 
   init() {
@@ -162,7 +105,7 @@ class InnerPeaceSoundEngine {
     this.ctx = new AudioCtx();
 
     this.masterGain = this.ctx.createGain();
-    this.masterGain.gain.value = 0.85;
+    this.masterGain.gain.value = 0.9;
     this.masterGain.connect(this.ctx.destination);
 
     const bufferSize = this.ctx.sampleRate * 3;
@@ -176,32 +119,31 @@ class InnerPeaceSoundEngine {
       output[i] *= 3.2;
     }
 
-    // 1. Fire rumble / Lake gentle wave lapping
+    // 1. Deep Warm Hearth Rumble
     const fireRumble = this.ctx.createBufferSource();
     fireRumble.buffer = noiseBuffer;
     fireRumble.loop = true;
     const fireFilter = this.ctx.createBiquadFilter();
     fireFilter.type = 'lowpass';
-    fireFilter.frequency.value = 180;
-    this.nodes.fireFilter = fireFilter;
+    fireFilter.frequency.value = 165;
     this.nodes.fireGain = this.ctx.createGain();
-    this.nodes.fireGain.gain.value = this.volumes.fire * 0.4;
+    this.nodes.fireGain.gain.value = this.volumes.fire * 0.42;
     fireRumble.connect(fireFilter);
     fireFilter.connect(this.nodes.fireGain);
     this.nodes.fireGain.connect(this.masterGain);
     fireRumble.start();
 
-    // 2. Alpine / Mountain Valley Breeze
+    // 2. Pine Forest Night Breeze
     const windSource = this.ctx.createBufferSource();
     windSource.buffer = noiseBuffer;
     windSource.loop = true;
     const windFilter = this.ctx.createBiquadFilter();
     windFilter.type = 'bandpass';
-    windFilter.frequency.value = 340;
-    windFilter.Q.value = 4.0;
+    windFilter.frequency.value = 320;
+    windFilter.Q.value = 4.2;
     this.nodes.windFilter = windFilter;
     this.nodes.windGain = this.ctx.createGain();
-    this.nodes.windGain.gain.value = this.volumes.wind * 0.25;
+    this.nodes.windGain.gain.value = this.volumes.wind * 0.24;
     windSource.connect(windFilter);
     windFilter.connect(this.nodes.windGain);
     this.nodes.windGain.connect(this.masterGain);
@@ -213,8 +155,8 @@ class InnerPeaceSoundEngine {
     rainSource.loop = true;
     const rainFilter = this.ctx.createBiquadFilter();
     rainFilter.type = 'bandpass';
-    rainFilter.frequency.value = 1100;
-    rainFilter.Q.value = 0.8;
+    rainFilter.frequency.value = 1050;
+    rainFilter.Q.value = 0.85;
     this.nodes.rainGain = this.ctx.createGain();
     this.nodes.rainGain.gain.value = this.volumes.rain * 0.35;
     rainSource.connect(rainFilter);
@@ -222,41 +164,30 @@ class InnerPeaceSoundEngine {
     this.nodes.rainGain.connect(this.masterGain);
     rainSource.start();
 
-    this.crackleTimer = setInterval(() => this.triggerAmbientDetail(), 120);
-    this.bowlTimer = setInterval(() => {
-      if (!this.isMuted && this.volumes.night > 0.15 && Math.random() < 0.38) {
-        this.playSingingBowlNote();
-      }
-    }, 6500);
+    setInterval(() => this.triggerCrackleAndNight(), 110);
   }
 
-  triggerAmbientDetail() {
+  triggerCrackleAndNight() {
     if (!this.ctx || this.isMuted) return;
     const now = this.ctx.currentTime;
-    const concept = getConceptType();
 
     if (this.nodes.windFilter) {
-      const targetFreq = 260 + Math.sin(now * 0.35) * 100;
-      this.nodes.windFilter.frequency.setTargetAtTime(targetFreq, now, 0.3);
+      this.nodes.windFilter.frequency.setTargetAtTime(250 + Math.sin(now * 0.3) * 90, now, 0.3);
     }
 
-    if (concept === 'water' && this.nodes.fireFilter) {
-      // Gentle rhythmic lake wave shore wash
-      const waveFreq = 160 + Math.sin(now * 1.1) * 90;
-      this.nodes.fireFilter.frequency.setTargetAtTime(waveFreq, now, 0.4);
-    } else if (concept === 'fire' && this. volumes.fire > 0.02 && Math.random() < 0.32) {
-      // Cozy wood crackle
+    // Crisp Oak Firewood Pop & Crackle
+    if (this.volumes.fire > 0.02 && Math.random() < 0.36) {
       const osc = this.ctx.createOscillator();
       const gain = this.ctx.createGain();
       const filter = this.ctx.createBiquadFilter();
       filter.type = 'highpass';
-      filter.frequency.value = 1400 + Math.random() * 1800;
+      filter.frequency.value = 1350 + Math.random() * 2000;
       osc.type = 'triangle';
-      osc.frequency.setValueAtTime(160 + Math.random() * 500, now);
-      osc.frequency.exponentialRampToValueAtTime(45, now + 0.035);
-      const amp = (0.025 + Math.random() * 0.05) * this.volumes.fire;
+      osc.frequency.setValueAtTime(170 + Math.random() * 550, now);
+      osc.frequency.exponentialRampToValueAtTime(42, now + 0.035);
+      const amp = (0.03 + Math.random() * 0.055) * this.volumes.fire;
       gain.gain.setValueAtTime(amp, now);
-      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.04);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.042);
       osc.connect(filter);
       filter.connect(gain);
       gain.connect(this.masterGain);
@@ -264,43 +195,53 @@ class InnerPeaceSoundEngine {
       osc.stop(now + 0.045);
     }
 
-    // Crickets in mountain valley / forest night
-    if (this.volumes.night > 0.05 && Math.random() < 0.08) {
+    // Distant Night Cricket
+    if (this.volumes.night > 0.05 && Math.random() < 0.07) {
       const cOsc = this.ctx.createOscillator();
       const cGain = this.ctx.createGain();
       cOsc.type = 'sine';
-      cOsc.frequency.setValueAtTime(3900 + Math.random() * 200, now);
-      const cAmp = 0.01 * this.volumes.night;
+      cOsc.frequency.setValueAtTime(3850 + Math.random() * 180, now);
+      const cAmp = 0.009 * this.volumes.night;
       cGain.gain.setValueAtTime(0.0001, now);
       cGain.gain.linearRampToValueAtTime(cAmp, now + 0.02);
-      cGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.14);
+      cGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.13);
       cOsc.connect(cGain);
       cGain.connect(this.masterGain);
       cOsc.start(now);
-      cOsc.stop(now + 0.15);
+      cOsc.stop(now + 0.14);
     }
   }
 
-  playSingingBowlNote(customFreq) {
+  playWoodThud() {
     if (!this.ctx || this.isMuted) return;
-    const freqs = [256, 288, 320, 384, 432, 512]; // Healing harmonic scale
-    const baseFreq = customFreq || freqs[Math.floor(Math.random() * freqs.length)];
     const now = this.ctx.currentTime;
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
     osc.type = 'sine';
-    osc.frequency.setValueAtTime(baseFreq, now);
-    gain.gain.setValueAtTime(0.0001, now);
-    gain.gain.linearRampToValueAtTime(0.045 * Math.max(0.3, this.volumes.night), now + 0.3);
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + 4.8);
+    osc.frequency.setValueAtTime(135, now);
+    osc.frequency.exponentialRampToValueAtTime(38, now + 0.14);
+    gain.gain.setValueAtTime(0.18 * this.volumes.fire, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
     osc.connect(gain);
     gain.connect(this.masterGain);
     osc.start(now);
-    osc.stop(now + 5.0);
+    osc.stop(now + 0.17);
   }
 
-  playWarmChime() {
-    this.playSingingBowlNote(528);
+  playWarmBell() {
+    if (!this.ctx || this.isMuted) return;
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(432, now);
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.linearRampToValueAtTime(0.05, now + 0.15);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 3.2);
+    osc.connect(gain);
+    gain.connect(this.masterGain);
+    osc.start(now);
+    osc.stop(now + 3.3);
   }
 
   setVolume(channel, val0to100) {
@@ -308,603 +249,373 @@ class InnerPeaceSoundEngine {
     this.volumes[channel] = v;
     if (!this.ctx) return;
     const now = this.ctx.currentTime;
-    if (channel === 'fire' && this.nodes.fireGain) this.nodes.fireGain.gain.setTargetAtTime(v * 0.4, now, 0.1);
-    if (channel === 'wind' && this.nodes.windGain) this.nodes.windGain.gain.setTargetAtTime(v * 0.25, now, 0.1);
+    if (channel === 'fire' && this.nodes.fireGain) this.nodes.fireGain.gain.setTargetAtTime(v * 0.42, now, 0.1);
+    if (channel === 'wind' && this.nodes.windGain) this.nodes.windGain.gain.setTargetAtTime(v * 0.24, now, 0.1);
     if (channel === 'rain' && this.nodes.rainGain) this.nodes.rainGain.gain.setTargetAtTime(v * 0.35, now, 0.1);
   }
 
   toggleMute() {
     this.isMuted = !this.isMuted;
     if (this.ctx && this.masterGain) {
-      this.masterGain.gain.setTargetAtTime(this.isMuted ? 0 : 0.85, this.ctx.currentTime, 0.1);
+      this.masterGain.gain.setTargetAtTime(this.isMuted ? 0 : 0.9, this.ctx.currentTime, 0.1);
     }
     return this.isMuted;
   }
 }
 
-const soundEngine = new InnerPeaceSoundEngine();
+const soundEngine = new CampfireAudioEngine();
 
 // ====================================================
-// 3. THREE.JS 3D SANCTUARY WORLD (3 DISTINCT CONCEPTS)
+// 4. THREE.JS 3D CAMPFIRE SANCTUARY (SHADER FLAMES & CLOSE POV)
 // ====================================================
 const canvas = document.getElementById('campfireCanvas');
-const labelsContainer = document.getElementById('labels3DContainer');
-
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.12;
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x0b0811);
-scene.fog = new THREE.FogExp2(0x0b0811, 0.015);
+scene.background = new THREE.Color(0x09070c);
+scene.fog = new THREE.FogExp2(0x09070c, 0.022);
 
-const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 260);
+const camera = new THREE.PerspectiveCamera(42, window.innerWidth / window.innerHeight, 0.1, 160);
 
+// Smooth Camera Controller (Supports Over-the-Shoulder 1st-Person Feel + Free Orbit)
 const camControl = {
-  theta: 0.0,
-  phi: 0.42,
-  radius: 14.5,
-  targetTheta: 0.0,
-  targetPhi: 0.42,
-  targetRadius: 14.5,
-  lookAtY: 1.3,
-  targetLookAtY: 1.3,
+  orbitOffset: 0.0, // User drag offset around the fire
+  pitchOffset: 0.0,
+  zoomOffset: 0.0,
+  currentPos: new THREE.Vector3(0, 2.3, 6.2),
+  currentLookAt: new THREE.Vector3(0, 1.05, 0),
   isDragging: false,
   dragMoved: false,
   lastX: 0,
   lastY: 0
 };
 
-// Lights
-const hemiLight = new THREE.HemisphereLight(0x2a243b, 0x120c08, 0.55);
+// Lighting
+const hemiLight = new THREE.HemisphereLight(0x282238, 0x140d08, 0.45);
 scene.add(hemiLight);
 
-const sunMoonLight = new THREE.DirectionalLight(0xffeedd, 0.35);
-sunMoonLight.position.set(18, 28, -25);
-sunMoonLight.castShadow = true;
-scene.add(sunMoonLight);
-
-const fireLight = new THREE.PointLight(0xff7b29, 2.9, 26, 1.5);
-fireLight.position.set(0, 1.8, 0);
+const fireLight = new THREE.PointLight(0xff7722, 3.6, 24, 1.4);
+fireLight.position.set(0, 1.5, 0);
 fireLight.castShadow = true;
 fireLight.shadow.mapSize.width = 1024;
 fireLight.shadow.mapSize.height = 1024;
+fireLight.shadow.bias = -0.001;
 scene.add(fireLight);
 
-// Ground Plane for Raycasting & Walking
-const groundGeo = new THREE.CircleGeometry(90, 64);
-const groundMat = new THREE.MeshStandardMaterial({ color: 0x171210, roughness: 0.95, metalness: 0.04 });
-const groundMesh = new THREE.Mesh(groundGeo, groundMat);
+const emberGlowLight = new THREE.PointLight(0xff3b00, 1.8, 9, 1.8);
+emberGlowLight.position.set(0, 0.35, 0);
+scene.add(emberGlowLight);
+
+// Ground Clearing
+const groundMat = new THREE.MeshStandardMaterial({ color: 0x16110e, roughness: 0.96, metalness: 0.02 });
+const groundMesh = new THREE.Mesh(new THREE.CircleGeometry(65, 64), groundMat);
 groundMesh.rotation.x = -Math.PI / 2;
 groundMesh.receiveShadow = true;
 scene.add(groundMesh);
 
-// Environment Concept Groups
-const fireWorldGroup = new THREE.Group(); // Concept 1: Forest Campfire
-const waterWorldGroup = new THREE.Group(); // Concept 2: Swiss Alpine Lake
-const starWorldGroup = new THREE.Group(); // Concept 3: Gangwon-do Mountain Valley Stargazing
-scene.add(fireWorldGroup);
-scene.add(waterWorldGroup);
-scene.add(starWorldGroup);
+// Subtle Starry Night Sky Dome
+const starsGeo = new THREE.BufferGeometry();
+const starCount = 900;
+const starPos = new Float32Array(starCount * 3);
+for (let i = 0; i < starCount; i++) {
+  const r = 65 + Math.random() * 25;
+  const theta = Math.random() * Math.PI * 2;
+  const phi = Math.random() * Math.PI * 0.42;
+  starPos[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+  starPos[i * 3 + 1] = r * Math.cos(phi) + 4;
+  starPos[i * 3 + 2] = r * Math.sin(phi) * Math.sin(theta);
+}
+starsGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+const starsMat = new THREE.PointsMaterial({ color: 0xffebd6, size: 0.35, transparent: true, opacity: 0.65 });
+const starField = new THREE.Points(starsGeo, starsMat);
+scene.add(starField);
 
 // ====================================================
-// 3A. BUILD CONCEPT 1: 🔥 불멍 (PINE FOREST CAMPFIRE)
+// 4A. DETAILED 3D CAMPFIRE HEARTH & CUSTOM GLSL SHADER FLAMES
 // ====================================================
-const flameCones = [];
+const hearthGroup = new THREE.Group();
+scene.add(hearthGroup);
+
+// Stone Ring
+const stoneMat = new THREE.MeshStandardMaterial({ color: 0x3b3532, roughness: 0.92 });
 for (let i = 0; i < 18; i++) {
-  const stoneGeo = new THREE.DodecahedronGeometry(0.28 + (i % 3) * 0.05, 1);
-  const stoneMat = new THREE.MeshStandardMaterial({ color: 0x3d3835, roughness: 0.9 });
-  const stone = new THREE.Mesh(stoneGeo, stoneMat);
-  const angle = (i / 18) * Math.PI * 2;
-  stone.position.set(Math.cos(angle) * 1.65, 0.14, Math.sin(angle) * 1.65);
-  stone.scale.y = 0.65;
+  const a = (i / 18) * Math.PI * 2;
+  const sGeo = new THREE.DodecahedronGeometry(0.28 + (i % 3) * 0.05, 1);
+  const stone = new THREE.Mesh(sGeo, stoneMat);
+  stone.position.set(Math.cos(a) * 1.55, 0.14, Math.sin(a) * 1.55);
+  stone.scale.set(1.1, 0.68, 1.0);
+  stone.rotation.y = a;
   stone.castShadow = true;
-  fireWorldGroup.add(stone);
+  stone.receiveShadow = true;
+  hearthGroup.add(stone);
 }
 
-const emberBed = new THREE.Mesh(
-  new THREE.CylinderGeometry(1.4, 1.5, 0.16, 24),
-  new THREE.MeshBasicMaterial({ color: 0xff4500 })
-);
-emberBed.position.y = 0.08;
-fireWorldGroup.add(emberBed);
+// Glowing Charcoal & Ash Bed
+const emberBedMat = new THREE.MeshStandardMaterial({
+  color: 0x2a1108,
+  emissive: 0xff3d00,
+  emissiveIntensity: 1.35,
+  roughness: 0.85
+});
+const emberBed = new THREE.Mesh(new THREE.CylinderGeometry(1.32, 1.45, 0.18, 24), emberBedMat);
+emberBed.position.y = 0.09;
+hearthGroup.add(emberBed);
 
-const woodMat = new THREE.MeshStandardMaterial({ color: 0x4a2c18, roughness: 0.9 });
+// Base Firewood Logs (Detailed Bark + Glowing Inner Core)
+const barkMat = new THREE.MeshStandardMaterial({
+  color: 0x3e2414,
+  roughness: 0.92,
+  emissive: 0x4a1200,
+  emissiveIntensity: 0.35
+});
+const dynamicLogsGroup = new THREE.Group();
+hearthGroup.add(dynamicLogsGroup);
+
+function createFirewoodLogMesh(length = 2.1, radius = 0.14) {
+  const logGroup = new THREE.Group();
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(radius * 0.92, radius, length, 12), barkMat);
+  body.castShadow = true;
+  body.receiveShadow = true;
+  logGroup.add(body);
+  return logGroup;
+}
+
 for (let i = 0; i < 7; i++) {
-  const log = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.15, 2.3, 10), woodMat);
-  const angle = (i / 7) * Math.PI * 2;
-  log.position.set(Math.cos(angle) * 0.35, 0.34, Math.sin(angle) * 0.35);
-  log.rotation.z = Math.cos(angle) * 0.55;
-  log.rotation.x = Math.sin(angle) * 0.55;
-  log.castShadow = true;
-  fireWorldGroup.add(log);
+  const a = (i / 7) * Math.PI * 2;
+  const log = createFirewoodLogMesh(2.15, 0.14);
+  log.position.set(Math.cos(a) * 0.32, 0.34, Math.sin(a) * 0.32);
+  log.rotation.z = Math.cos(a) * 0.56;
+  log.rotation.x = Math.sin(a) * 0.56;
+  hearthGroup.add(log);
 }
 
-const flameColors = [0xff4500, 0xff7700, 0xffaa00, 0xffdd55, 0xfff3b0];
-for (let i = 0; i < 14; i++) {
-  const radius = 0.42 - (i / 14) * 0.22;
-  const height = 1.45 + (i % 4) * 0.42;
-  const mat = new THREE.MeshBasicMaterial({
-    color: flameColors[i % flameColors.length],
-    transparent: true,
-    opacity: 0.8,
-    blending: THREE.AdditiveBlending,
-    depthWrite: false
-  });
-  const cone = new THREE.Mesh(new THREE.ConeGeometry(radius, height, 8), mat);
-  const a = (i / 14) * Math.PI * 2;
-  const dist = (i % 3) * 0.2;
-  cone.position.set(Math.cos(a) * dist, height * 0.42 + 0.15, Math.sin(a) * dist);
-  cone.userData = {
-    baseX: cone.position.x,
-    baseZ: cone.position.z,
-    baseY: cone.position.y,
-    speed: 3.2 + i * 0.35,
-    phase: i * 1.1
+// Custom GLSL Volumetric Shader Flame Layers (Organic, Hypnotic Dancing Fire)
+const flameVertexShader = `
+  uniform float uTime;
+  uniform float uSeed;
+  uniform float uHeatScale;
+  varying vec2 vUv;
+  varying float vHeight;
+
+  void main() {
+    vUv = uv;
+    vec3 pos = position;
+    float h = clamp((pos.y + 0.5) / 2.2, 0.0, 1.0);
+    vHeight = h;
+
+    // Organic wind sway & turbulent lick at higher altitudes
+    float swayX = sin(uTime * 3.8 + h * 4.5 + uSeed) * 0.18 * pow(h, 1.3);
+    float swayZ = cos(uTime * 3.2 + h * 4.0 + uSeed * 1.7) * 0.18 * pow(h, 1.3);
+    float pinch = 1.0 - 0.35 * sin(uTime * 5.5 + h * 6.0 + uSeed) * h;
+
+    pos.x = pos.x * pinch + swayX;
+    pos.z = pos.z * pinch + swayZ;
+    pos.y *= uHeatScale;
+
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+  }
+`;
+
+const flameFragmentShader = `
+  uniform vec3 uColorCore;
+  uniform vec3 uColorMid;
+  uniform vec3 uColorTip;
+  uniform float uOpacity;
+  varying vec2 vUv;
+  varying float vHeight;
+
+  void main() {
+    vec3 col = mix(uColorCore, uColorMid, smoothstep(0.0, 0.55, vHeight));
+    col = mix(col, uColorTip, smoothstep(0.5, 1.0, vHeight));
+    float alpha = (1.0 - smoothstep(0.65, 1.0, vHeight)) * uOpacity;
+    gl_FragColor = vec4(col, alpha);
+  }
+`;
+
+const shaderFlames = [];
+for (let i = 0; i < 16; i++) {
+  const radius = 0.52 - (i / 16) * 0.28;
+  const height = 1.55 + (i % 4) * 0.48;
+  const geo = new THREE.ConeGeometry(radius, height, 16, 18, false);
+  geo.translate(0, height * 0.42, 0);
+
+  const uniforms = {
+    uTime: { value: 0 },
+    uSeed: { value: i * 1.37 },
+    uHeatScale: { value: 1.0 },
+    uColorCore: { value: new THREE.Color(0xfff7cc) },
+    uColorMid: { value: new THREE.Color(0xff8811) },
+    uColorTip: { value: new THREE.Color(0xd92600) },
+    uOpacity: { value: 0.48 - (i / 16) * 0.18 }
   };
-  fireWorldGroup.add(cone);
-  flameCones.push(cone);
+
+  const mat = new THREE.ShaderMaterial({
+    vertexShader: flameVertexShader,
+    fragmentShader: flameFragmentShader,
+    uniforms,
+    transparent: true,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+    side: THREE.DoubleSide
+  });
+
+  const mesh = new THREE.Mesh(geo, mat);
+  const a = (i / 16) * Math.PI * 2;
+  const r = (i % 3) * 0.16;
+  mesh.position.set(Math.cos(a) * r, 0.18, Math.sin(a) * r);
+  hearthGroup.add(mesh);
+  shaderFlames.push(mesh);
 }
 
-// Pine Trees around campfire (placed outside radius 15 so camera never clips)
-const trunkMat = new THREE.MeshStandardMaterial({ color: 0x2b1d14, roughness: 0.95 });
-const leafMat = new THREE.MeshStandardMaterial({ color: 0x16281e, roughness: 0.85 });
-for (let i = 0; i < 42; i++) {
+// Rising 3D Sparks / Embers Particle System
+const EMBER_COUNT = 85;
+const emberMeshes = [];
+const emberMatBase = new THREE.MeshBasicMaterial({
+  color: 0xffae42,
+  transparent: true,
+  opacity: 0.9,
+  blending: THREE.AdditiveBlending
+});
+
+for (let i = 0; i < EMBER_COUNT; i++) {
+  const sp = new THREE.Mesh(new THREE.SphereGeometry(0.024 + Math.random() * 0.02, 6, 6), emberMatBase.clone());
+  resetEmberParticle(sp, true);
+  hearthGroup.add(sp);
+  emberMeshes.push(sp);
+}
+
+function resetEmberParticle(sp, randomY = false) {
+  const a = Math.random() * Math.PI * 2;
+  const r = Math.random() * 0.85;
+  sp.position.set(Math.cos(a) * r, randomY ? Math.random() * 4.5 : 0.35, Math.sin(a) * r);
+  sp.userData = {
+    vy: 0.65 + Math.random() * 1.1,
+    swaySpeed: 1.5 + Math.random() * 2.5,
+    swayAmp: 0.004 + Math.random() * 0.008,
+    phase: Math.random() * Math.PI * 2,
+    maxY: 3.2 + Math.random() * 2.8
+  };
+}
+
+// Surrounding Pine Trees (Placed outside radius 14.5 so they NEVER block the camera!)
+const trunkMat = new THREE.MeshStandardMaterial({ color: 0x261911, roughness: 0.95 });
+const pineLeafMat = new THREE.MeshStandardMaterial({ color: 0x13221a, roughness: 0.88 });
+for (let i = 0; i < 40; i++) {
   const tree = new THREE.Group();
-  const a = (i / 42) * Math.PI * 2 + (Math.random() - 0.5) * 0.08;
-  const r = 15.5 + Math.random() * 18;
-  const s = 0.85 + Math.random() * 0.8;
+  const a = (i / 40) * Math.PI * 2 + (Math.random() - 0.5) * 0.06;
+  const dist = 15.0 + Math.random() * 16;
+  const s = 0.9 + Math.random() * 0.75;
   const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.2 * s, 0.32 * s, 2.2 * s, 7), trunkMat);
   trunk.position.y = 1.1 * s;
   tree.add(trunk);
   for (let l = 0; l < 3; l++) {
-    const cone = new THREE.Mesh(new THREE.ConeGeometry((1.8 - l * 0.4) * s, (2.6 - l * 0.3) * s, 7), leafMat);
+    const cone = new THREE.Mesh(new THREE.ConeGeometry((1.8 - l * 0.4) * s, (2.6 - l * 0.3) * s, 7), pineLeafMat);
     cone.position.y = (2.3 + l * 1.35) * s;
     tree.add(cone);
   }
-  tree.position.set(Math.cos(a) * r, 0, Math.sin(a) * r);
-  fireWorldGroup.add(tree);
+  tree.position.set(Math.cos(a) * dist, 0, Math.sin(a) * dist);
+  scene.add(tree);
 }
 
 // ====================================================
-// 3B. BUILD CONCEPT 2: 🏔️ 물멍 (SWISS ALPINE EMERALD LAKE)
-// ====================================================
-// Expansive Swiss Lake Water Surface in front of the shore (Z < 2.2)
-const swissLakeGeo = new THREE.PlaneGeometry(160, 110, 48, 48);
-const swissLakeMat = new THREE.MeshStandardMaterial({
-  color: 0x1b8ca6, // Turquoise Swiss glacial lake
-  roughness: 0.16,
-  metalness: 0.72,
-  transparent: true,
-  opacity: 0.92
-});
-const swissLakeMesh = new THREE.Mesh(swissLakeGeo, swissLakeMat);
-swissLakeMesh.rotation.x = -Math.PI / 2;
-swissLakeMesh.position.set(0, 0.04, -52);
-waterWorldGroup.add(swissLakeMesh);
-
-// Sun / Moon Shimmering Reflection strip (윤슬) on the lake
-const shimmerParticles = [];
-const shimmerMat = new THREE.MeshBasicMaterial({
-  color: 0xfff3c4,
-  transparent: true,
-  opacity: 0.75,
-  blending: THREE.AdditiveBlending
-});
-for (let i = 0; i < 65; i++) {
-  const shim = new THREE.Mesh(new THREE.PlaneGeometry(0.55 + Math.random() * 0.9, 0.12), shimmerMat.clone());
-  shim.rotation.x = -Math.PI / 2;
-  shim.position.set((Math.random() - 0.5) * 28, 0.06, -4 - Math.random() * 38);
-  shim.userData = { baseX: shim.position.x, phase: Math.random() * Math.PI * 2, speed: 1.5 + Math.random() * 2 };
-  waterWorldGroup.add(shim);
-  shimmerParticles.push(shim);
-}
-
-// Majestic Swiss Alps Snow-Capped Mountain Range across the lake
-const alpsRockMat = new THREE.MeshStandardMaterial({ color: 0x3b4d5e, roughness: 0.85 });
-const alpsSnowMat = new THREE.MeshStandardMaterial({ color: 0xf4f9ff, roughness: 0.35, emissive: 0x1a2636, emissiveIntensity: 0.2 });
-
-const alpsPeaksData = [
-  { x: -42, z: -58, r: 22, h: 32 },
-  { x: -22, z: -52, r: 19, h: 28 },
-  { x: 0, z: -60, r: 26, h: 38 }, // Main Matterhorn/Jungfrau-inspired peak
-  { x: 23, z: -54, r: 20, h: 30 },
-  { x: 44, z: -58, r: 23, h: 33 },
-  { x: -12, z: -46, r: 14, h: 19 },
-  { x: 14, z: -46, r: 15, h: 21 }
-];
-
-alpsPeaksData.forEach((p) => {
-  const peakGroup = new THREE.Group();
-  const baseCone = new THREE.Mesh(new THREE.ConeGeometry(p.r, p.h, 7), alpsRockMat);
-  baseCone.position.y = p.h * 0.5;
-  peakGroup.add(baseCone);
-
-  // Snow cap on upper 45%
-  const snowCone = new THREE.Mesh(new THREE.ConeGeometry(p.r * 0.48, p.h * 0.48, 7), alpsSnowMat);
-  snowCone.position.y = p.h * 0.77;
-  peakGroup.add(snowCone);
-
-  peakGroup.position.set(p.x, -0.5, p.z);
-  peakGroup.rotation.y = Math.random() * Math.PI;
-  waterWorldGroup.add(peakGroup);
-});
-
-// Swiss Wooden Pier & Shore Grass/Reeds (호수 앞 수풀)
-const reedMat = new THREE.MeshStandardMaterial({ color: 0x3d6b48, roughness: 0.8 });
-const grassTufts = [];
-for (let i = 0; i < 90; i++) {
-  const tuft = new THREE.Group();
-  const tx = (Math.random() - 0.5) * 28;
-  const tz = 1.6 + Math.random() * 5.5;
-  for (let b = 0; b < 5; b++) {
-    const blade = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.45 + Math.random() * 0.35, 4), reedMat);
-    blade.position.set((Math.random() - 0.5) * 0.25, 0.22, (Math.random() - 0.5) * 0.25);
-    blade.rotation.z = (Math.random() - 0.5) * 0.35;
-    tuft.add(blade);
-  }
-  tuft.position.set(tx, 0, tz);
-  tuft.userData = { phase: Math.random() * Math.PI * 2 };
-  waterWorldGroup.add(tuft);
-  grassTufts.push(tuft);
-}
-
-// ====================================================
-// 3C. BUILD CONCEPT 3: 🌌 별멍 (GANGWON-DO MOUNTAIN VALLEY STARGAZING)
-// ====================================================
-// Surrounding Dark Gangwon-do Mountain Valley Ridges (산골짜기 능선)
-const ridgeMat = new THREE.MeshStandardMaterial({ color: 0x070a14, roughness: 0.98 });
-for (let i = 0; i < 16; i++) {
-  const a = (i / 16) * Math.PI * 2;
-  const dist = 36 + (i % 3) * 8;
-  const h = 16 + (i % 4) * 6;
-  const w = 22 + (i % 2) * 6;
-  const ridge = new THREE.Mesh(new THREE.ConeGeometry(w, h, 6), ridgeMat);
-  ridge.position.set(Math.cos(a) * dist, h * 0.42 - 1, Math.sin(a) * dist);
-  ridge.rotation.y = a;
-  starWorldGroup.add(ridge);
-}
-
-// Cozy Small Tent & Warm Camp Lantern in the Valley
-const tentGroup = new THREE.Group();
-const tentBody = new THREE.Mesh(
-  new THREE.ConeGeometry(2.2, 2.1, 4),
-  new THREE.MeshStandardMaterial({ color: 0xd48b45, roughness: 0.7, emissive: 0xff7b29, emissiveIntensity: 0.28 })
-);
-tentBody.position.y = 1.05;
-tentBody.rotation.y = Math.PI / 4;
-tentGroup.add(tentBody);
-tentGroup.position.set(-7.5, 0, -5.5);
-starWorldGroup.add(tentGroup);
-
-// 2,400+ Crisp Pouring Stars in Pitch-Black Sky Dome
-const starCount = 2400;
-const starGeo = new THREE.BufferGeometry();
-const starPositions = new Float32Array(starCount * 3);
-const starColors = new Float32Array(starCount * 3);
-const starPalette = [
-  new THREE.Color(0xffffff),
-  new THREE.Color(0xcce4ff),
-  new THREE.Color(0xffe8c2),
-  new THREE.Color(0xd8c8ff)
-];
-
-for (let i = 0; i < starCount; i++) {
-  const r = 68 + Math.random() * 45;
-  const theta = Math.random() * Math.PI * 2;
-  const phi = Math.random() * Math.PI * 0.47; // Upper hemisphere down to mountain ridges
-  starPositions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
-  starPositions[i * 3 + 1] = Math.max(4, r * Math.cos(phi));
-  starPositions[i * 3 + 2] = r * Math.sin(phi) * Math.sin(theta);
-
-  const c = starPalette[i % starPalette.length];
-  starColors[i * 3] = c.r;
-  starColors[i * 3 + 1] = c.g;
-  starColors[i * 3 + 2] = c.b;
-}
-starGeo.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
-starGeo.setAttribute('color', new THREE.BufferAttribute(starColors, 3));
-
-const starMat = new THREE.PointsMaterial({
-  size: 0.55,
-  vertexColors: true,
-  transparent: true,
-  opacity: 0.95,
-  blending: THREE.AdditiveBlending
-});
-const starField = new THREE.Points(starGeo, starMat);
-scene.add(starField);
-
-// Milky Way Band (은하수 성운 띠)
-const milkyWayGeo = new THREE.BufferGeometry();
-const mwCount = 1200;
-const mwPos = new Float32Array(mwCount * 3);
-for (let i = 0; i < mwCount; i++) {
-  const t = (Math.random() - 0.5) * Math.PI * 0.88;
-  const spread = (Math.random() - 0.5) * 14;
-  const r = 65;
-  mwPos[i * 3] = Math.sin(t) * r + spread;
-  mwPos[i * 3 + 1] = Math.cos(t) * r * 0.85 + (Math.random() - 0.5) * 6;
-  mwPos[i * 3 + 2] = -20 + spread * 1.4;
-}
-milkyWayGeo.setAttribute('position', new THREE.BufferAttribute(mwPos, 3));
-const milkyWayMat = new THREE.PointsMaterial({
-  color: 0x9bbcff,
-  size: 0.85,
-  transparent: true,
-  opacity: 0.38,
-  blending: THREE.AdditiveBlending
-});
-const milkyWayPoints = new THREE.Points(milkyWayGeo, milkyWayMat);
-starWorldGroup.add(milkyWayPoints);
-
-// 3D Constellations (별자리 선 & 이름표)
-const constellationGroup = new THREE.Group();
-starWorldGroup.add(constellationGroup);
-
-const CONSTELLATIONS = [
-  {
-    name: '✨ 북두칠성 (큰곰자리)',
-    points: [
-      [-24, 38, -32], [-19, 40, -30], [-15, 39, -28], [-11, 37, -27],
-      [-10, 33, -29], [-5, 34, -27], [-4, 38, -25]
-    ]
-  },
-  {
-    name: '✨ 카시오페이아',
-    points: [
-      [12, 44, -28], [16, 41, -27], [20, 43, -26], [24, 39, -25], [28, 42, -24]
-    ]
-  },
-  {
-    name: '✨ 오리온자리',
-    points: [
-      [-6, 30, -42], [2, 31, -42], [-2, 26, -43], [0, 26, -43], [2, 26, -43],
-      [-5, 20, -44], [4, 21, -44]
-    ]
-  },
-  {
-    name: '✨ 백조자리 (데네브)',
-    points: [
-      [0, 50, -14], [0, 45, -18], [0, 40, -22],
-      [-6, 44, -18], [0, 45, -18], [6, 46, -18]
-    ]
-  },
-  {
-    name: '✨ 거문고자리 (직녀성 베가)',
-    points: [
-      [-16, 47, -12], [-14, 44, -14], [-12, 45, -15], [-14, 47, -14], [-16, 47, -12]
-    ]
-  }
-];
-
-const constellationLabelItems = [];
-const lineMat = new THREE.LineBasicMaterial({
-  color: 0x8ecae6,
-  transparent: true,
-  opacity: 0.45
-});
-const brightStarMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
-
-CONSTELLATIONS.forEach((con) => {
-  const vecs = con.points.map(([x, y, z]) => new THREE.Vector3(x, y, z));
-  const lGeo = new THREE.BufferGeometry().setFromPoints(vecs);
-  const line = new THREE.Line(lGeo, lineMat);
-  constellationGroup.add(line);
-
-  vecs.forEach((v) => {
-    const sDot = new THREE.Mesh(new THREE.SphereGeometry(0.32, 8, 8), brightStarMat);
-    sDot.position.copy(v);
-    constellationGroup.add(sDot);
-  });
-
-  const labelEl = document.createElement('div');
-  labelEl.className = 'constellation-label-3d';
-  labelEl.textContent = con.name;
-  labelsContainer.appendChild(labelEl);
-
-  const center = vecs[Math.floor(vecs.length / 2)].clone();
-  center.y += 1.8;
-  constellationLabelItems.push({ el: labelEl, pos: center });
-});
-
-// ====================================================
-// 4. SEATS PER CONCEPT (LOGS, CAMPING CHAIRS/GRASS, SLEEPING MATS)
+// 5. LOG SEATS AROUND THE CAMPFIRE (CLOSE & COZY, NO FLOATING TEXT!)
 // ====================================================
 const MAX_SEATS = 12;
+const SEAT_RADIUS = 3.55; // Closer to the fire so character feels warm & intimate!
 const seats = [];
 const seatClickMeshes = [];
 
+const logSeatMat = new THREE.MeshStandardMaterial({ color: 0x3d2617, roughness: 0.88 });
+const logEndMat = new THREE.MeshStandardMaterial({ color: 0x7a5438, roughness: 0.82 });
+
 for (let i = 0; i < MAX_SEATS; i++) {
-  const seatRoot = new THREE.Group();
-  scene.add(seatRoot);
+  const angle = (i / MAX_SEATS) * Math.PI * 2;
+  const x = Math.cos(angle) * SEAT_RADIUS;
+  const z = Math.sin(angle) * SEAT_RADIUS;
+  const lookAngle = angle + Math.PI; // Faces center(0,0,0)
 
-  // 1. Fire Concept Log Bench
-  const logBench = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.32, 0.32, 1.55, 12),
-    new THREE.MeshStandardMaterial({ color: 0x3b2618, roughness: 0.9 })
-  );
-  logBench.rotation.z = Math.PI / 2;
-  logBench.position.y = 0.32;
-  logBench.castShadow = true;
-  logBench.receiveShadow = true;
-  seatRoot.add(logBench);
+  const seatGroup = new THREE.Group();
+  seatGroup.position.set(x, 0, z);
+  seatGroup.rotation.y = -angle + Math.PI / 2;
+  scene.add(seatGroup);
 
-  // 2. Water Concept Folding Camping Chair (캠핑 의자)
-  const campChairGroup = new THREE.Group();
-  const chairFrameMat = new THREE.MeshStandardMaterial({ color: 0x2c2c34, metalness: 0.6, roughness: 0.4 });
-  const chairFabricMat = new THREE.MeshStandardMaterial({ color: 0xd8cab8, roughness: 0.85, side: THREE.DoubleSide });
-  const seatPad = new THREE.Mesh(new THREE.BoxGeometry(0.92, 0.08, 0.85), chairFabricMat);
-  seatPad.position.set(0, 0.42, 0);
-  campChairGroup.add(seatPad);
-  const backRest = new THREE.Mesh(new THREE.BoxGeometry(0.92, 0.85, 0.08), chairFabricMat);
-  backRest.position.set(0, 0.82, -0.38);
-  backRest.rotation.x = -0.18;
-  campChairGroup.add(backRest);
-  // Armrests (wooden)
-  const armMat = new THREE.MeshStandardMaterial({ color: 0x7c4d2b, roughness: 0.7 });
-  const leftArm = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.05, 0.8), armMat);
-  leftArm.position.set(-0.48, 0.62, 0);
-  const rightArm = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.05, 0.8), armMat);
-  rightArm.position.set(0.48, 0.62, 0);
-  campChairGroup.add(leftArm, rightArm);
-  // Legs
-  [[-0.42, -0.35], [0.42, -0.35], [-0.42, 0.35], [0.42, 0.35]].forEach(([lx, lz]) => {
-    const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.45, 6), chairFrameMat);
-    leg.position.set(lx, 0.22, lz);
-    campChairGroup.add(leg);
-  });
-  seatRoot.add(campChairGroup);
+  const bench = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.34, 1.45, 14), logSeatMat);
+  bench.rotation.z = Math.PI / 2;
+  bench.position.y = 0.34;
+  bench.castShadow = true;
+  bench.receiveShadow = true;
+  seatGroup.add(bench);
 
-  // 3. Star Concept Padded Camping Sleeping Mat & Pillow (캠핑 매트 & 베개)
-  const sleepingMatGroup = new THREE.Group();
-  const matMesh = new THREE.Mesh(
-    new THREE.BoxGeometry(1.15, 0.09, 2.2),
-    new THREE.MeshStandardMaterial({ color: 0x3b4963, roughness: 0.85 })
-  );
-  matMesh.position.y = 0.05;
-  sleepingMatGroup.add(matMesh);
-  const pillowMesh = new THREE.Mesh(
-    new THREE.BoxGeometry(0.75, 0.14, 0.42),
-    new THREE.MeshStandardMaterial({ color: 0xe6dfd5, roughness: 0.8 })
-  );
-  pillowMesh.position.set(0, 0.13, -0.78);
-  sleepingMatGroup.add(pillowMesh);
-  // Small warm mini lantern beside the mat
-  const miniLantern = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.08, 0.1, 0.22, 8),
-    new THREE.MeshBasicMaterial({ color: 0xffbe6b })
-  );
-  miniLantern.position.set(0.72, 0.12, -0.6);
-  sleepingMatGroup.add(miniLantern);
-  seatRoot.add(sleepingMatGroup);
+  // Wood rings at ends of log
+  const capL = new THREE.Mesh(new THREE.CircleGeometry(0.33, 14), logEndMat);
+  capL.rotation.y = -Math.PI / 2;
+  capL.position.set(-0.726, 0.34, 0);
+  const capR = new THREE.Mesh(new THREE.CircleGeometry(0.33, 14), logEndMat);
+  capR.rotation.y = Math.PI / 2;
+  capR.position.set(0.726, 0.34, 0);
+  seatGroup.add(capL, capR);
 
-  // Invisible Hitbox for easy clicking
   const hitMesh = new THREE.Mesh(
-    new THREE.BoxGeometry(1.6, 1.0, 1.8),
+    new THREE.BoxGeometry(1.55, 0.9, 1.1),
     new THREE.MeshBasicMaterial({ visible: false })
   );
-  hitMesh.position.y = 0.4;
+  hitMesh.position.y = 0.42;
   hitMesh.userData = { seatIndex: i };
-  seatRoot.add(hitMesh);
+  seatGroup.add(hitMesh);
   seatClickMeshes.push(hitMesh);
 
-  const labelEl = document.createElement('div');
-  labelEl.className = 'label-3d empty-seat-hint';
-  labelEl.textContent = '빈 자리';
-  labelsContainer.appendChild(labelEl);
-
-  seats.push({
-    index: i,
-    root: seatRoot,
-    logBench,
-    campChairGroup,
-    sleepingMatGroup,
-    hitMesh,
-    x: 0,
-    z: 0,
-    angle: 0,
-    lookAngle: 0,
-    labelEl
-  });
-}
-
-function layoutSeatsForCurrentConcept() {
-  const concept = getConceptType();
-
-  for (let i = 0; i < MAX_SEATS; i++) {
-    const s = seats[i];
-    if (concept === 'fire') {
-      // Circle around campfire (radius 4.6)
-      const angle = (i / MAX_SEATS) * Math.PI * 2;
-      s.x = Math.cos(angle) * 4.6;
-      s.z = Math.sin(angle) * 4.6;
-      s.lookAngle = angle + Math.PI; // Face center fire
-      s.root.position.set(s.x, 0, s.z);
-      s.root.rotation.y = -angle + Math.PI / 2;
-
-      s.logBench.visible = true;
-      s.campChairGroup.visible = false;
-      s.sleepingMatGroup.visible = false;
-      s.labelEl.textContent = '빈 통나무 (앉기)';
-    } else if (concept === 'water') {
-      // Swiss Lake Shoreline arc looking North (-Z) toward Lake & Alps
-      const t = (i - (MAX_SEATS - 1) / 2);
-      s.x = t * 1.95;
-      s.z = 3.2 + Math.abs(t) * 0.28 + (i % 2 === 1 ? 0.6 : 0);
-      s.lookAngle = Math.PI; // Face -Z (toward Swiss Lake & Alps)
-      s.root.position.set(s.x, 0, s.z);
-      s.root.rotation.y = Math.PI;
-
-      s.logBench.visible = false;
-      // Show chair or grass depending on occupant or default alternating
-      s.campChairGroup.visible = (i % 2 === 0);
-      s.sleepingMatGroup.visible = false;
-      s.labelEl.textContent = i % 2 === 0 ? '빈 캠핑 의자' : '호숫가 수풀 자리';
-    } else if (concept === 'star') {
-      // Gangwon-do Stargazing Valley: Semi-circle of sleeping mats facing North sky (-Z)
-      const row = i < 7 ? 0 : 1;
-      const idxInRow = row === 0 ? i - 3 : i - 9;
-      s.x = idxInRow * 2.45;
-      s.z = row === 0 ? 1.5 : 4.5;
-      s.lookAngle = Math.PI;
-      s.root.position.set(s.x, 0, s.z);
-      s.root.rotation.y = Math.PI;
-
-      s.logBench.visible = false;
-      s.campChairGroup.visible = false;
-      s.sleepingMatGroup.visible = true;
-      s.labelEl.textContent = '빈 캠핑 매트 (눕기/앉기)';
-    }
-  }
+  seats.push({ index: i, group: seatGroup, bench, x, z, angle, lookAngle });
 }
 
 // ====================================================
-// 5. 3D CAMPER AVATAR BUILDER (WITH VISIBLE ARTICULATED LEGS!)
+// 6. LARGE, EXPRESSIVE 3D CAMPER CHARACTER (SMOOTH PROCEDURAL RIG)
 // ====================================================
-const camperMeshes = new Map(); // userId -> { group, labelEl, bodyParts, walkState, ... }
+const camperMeshes = new Map();
 const camperHitMeshes = [];
 
 function createCamper3D(user) {
   const group = new THREE.Group();
-  const bodyRoot = new THREE.Group(); // Pivots for sitting vs lying flat on mat!
+  // Scale character up by 1.28x so they look prominent, warm, and tangible like the original design!
+  group.scale.setScalar(1.28);
+
+  const bodyRoot = new THREE.Group();
   group.add(bodyRoot);
 
-  const coatColor = new THREE.Color(user.color || '#e07a5f');
-  const pantsMat = new THREE.MeshStandardMaterial({ color: 0x2b3340, roughness: 0.85 });
-  const shoeMat = new THREE.MeshStandardMaterial({ color: 0x3d271d, roughness: 0.9 });
-  const skinMat = new THREE.MeshStandardMaterial({ color: 0xffdfc4, roughness: 0.65 });
+  const coatColor = new THREE.Color(user.color || '#d96b43');
   const coatMat = new THREE.MeshStandardMaterial({ color: coatColor, roughness: 0.72 });
+  const pantsMat = new THREE.MeshStandardMaterial({ color: 0x262c36, roughness: 0.85 });
+  const bootMat = new THREE.MeshStandardMaterial({ color: 0x3b2416, roughness: 0.88 });
+  const skinMat = new THREE.MeshStandardMaterial({ color: 0xffdfc4, roughness: 0.62 });
 
-  // --- VISIBLE ARTICULATED LEGS (허벅지 + 종아리 + 신발) ---
+  // Articulated Legs (Thigh + Knee + Calf + Camping Boots)
   function buildLeg(sideSign) {
     const hipPivot = new THREE.Group();
-    hipPivot.position.set(sideSign * 0.17, 0.52, 0);
+    hipPivot.position.set(sideSign * 0.16, 0.48, 0);
 
-    // Thigh (허벅지)
-    const thigh = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.095, 0.42, 10), pantsMat);
-    thigh.position.set(0, -0.19, 0);
+    const thigh = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.095, 0.4, 10), pantsMat);
+    thigh.position.set(0, -0.18, 0);
     thigh.castShadow = true;
     hipPivot.add(thigh);
 
-    // Knee Pivot (무릎 관절)
     const kneePivot = new THREE.Group();
-    kneePivot.position.set(0, -0.38, 0);
+    kneePivot.position.set(0, -0.36, 0);
     hipPivot.add(kneePivot);
 
-    // Calf / Lower Leg (종아리)
-    const calf = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.075, 0.38, 10), pantsMat);
-    calf.position.set(0, -0.18, 0);
+    const calf = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.075, 0.36, 10), pantsMat);
+    calf.position.set(0, -0.17, 0);
     calf.castShadow = true;
     kneePivot.add(calf);
 
-    // Shoe (캠핑 부츠/신발)
-    const shoe = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.11, 0.26), shoeMat);
-    shoe.position.set(0, -0.36, 0.05);
-    shoe.castShadow = true;
-    kneePivot.add(shoe);
+    const boot = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.11, 0.25), bootMat);
+    boot.position.set(0, -0.34, 0.05);
+    boot.castShadow = true;
+    kneePivot.add(boot);
 
     return { hipPivot, kneePivot };
   }
@@ -913,155 +624,158 @@ function createCamper3D(user) {
   const rightLeg = buildLeg(1);
   bodyRoot.add(leftLeg.hipPivot, rightLeg.hipPivot);
 
-  // --- TORSO (상체 코트) ---
-  const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.34, 0.78, 14), coatMat);
-  torso.position.y = 0.88;
-  torso.castShadow = true;
-  bodyRoot.add(torso);
+  // Cozy Rounded Cloak/Coat Torso
+  const torsoPivot = new THREE.Group();
+  torsoPivot.position.set(0, 0.48, 0);
+  bodyRoot.add(torsoPivot);
 
-  // Scarf (목도리)
+  const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.21, 0.36, 0.76, 16), coatMat);
+  torso.position.y = 0.38;
+  torso.castShadow = true;
+  torso.receiveShadow = true;
+  torsoPivot.add(torso);
+
+  // Knit Scarf
   const scarf = new THREE.Mesh(
-    new THREE.TorusGeometry(0.22, 0.065, 8, 16),
-    new THREE.MeshStandardMaterial({ color: 0xf4e8c1, roughness: 0.8 })
+    new THREE.TorusGeometry(0.215, 0.068, 10, 18),
+    new THREE.MeshStandardMaterial({ color: 0xf2e4c9, roughness: 0.85 })
   );
   scarf.rotation.x = Math.PI / 2;
-  scarf.position.y = 1.26;
-  bodyRoot.add(scarf);
+  scarf.position.y = 0.76;
+  torsoPivot.add(scarf);
 
-  // --- HEAD & BEANIE (머리 & 비니 모자) ---
+  // Head + Warm Beanie Hat
   const headGroup = new THREE.Group();
-  headGroup.position.y = 1.48;
-  const head = new THREE.Mesh(new THREE.SphereGeometry(0.25, 16, 16), skinMat);
+  headGroup.position.y = 0.98;
+  torsoPivot.add(headGroup);
+
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.255, 18, 18), skinMat);
   head.castShadow = true;
   headGroup.add(head);
 
-  // Calm eyes
-  const eyeMat = new THREE.MeshBasicMaterial({ color: 0x221a15 });
-  const leftEye = new THREE.Mesh(new THREE.SphereGeometry(0.026, 6, 6), eyeMat);
-  leftEye.position.set(-0.08, 0.03, 0.22);
-  const rightEye = new THREE.Mesh(new THREE.SphereGeometry(0.026, 6, 6), eyeMat);
-  rightEye.position.set(0.08, 0.03, 0.22);
-  headGroup.add(leftEye, rightEye);
-
+  const beanieMat = new THREE.MeshStandardMaterial({
+    color: coatColor.clone().multiplyScalar(0.62),
+    roughness: 0.9
+  });
   const beanie = new THREE.Mesh(
-    new THREE.SphereGeometry(0.265, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.56),
-    new THREE.MeshStandardMaterial({ color: coatColor.clone().multiplyScalar(0.65), roughness: 0.9 })
+    new THREE.SphereGeometry(0.27, 18, 14, 0, Math.PI * 2, 0, Math.PI * 0.58),
+    beanieMat
   );
-  beanie.position.y = 0.03;
+  beanie.position.y = 0.02;
+  beanie.rotation.x = -0.12;
   headGroup.add(beanie);
-  bodyRoot.add(headGroup);
 
-  // --- ARMS & HANDS (양팔 + 손) ---
+  const pomPom = new THREE.Mesh(new THREE.SphereGeometry(0.065, 10, 10), beanieMat);
+  pomPom.position.set(0, 0.29, -0.04);
+  headGroup.add(pomPom);
+
+  // Articulated Arms (Shoulder + Upper Arm + Forearm + Hand)
   function buildArm(sideSign) {
     const shoulder = new THREE.Group();
-    shoulder.position.set(sideSign * 0.28, 1.16, 0.04);
-    const armCyl = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.058, 0.42, 8), coatMat);
-    armCyl.rotation.x = Math.PI / 2;
-    armCyl.position.set(0, -0.04, 0.2);
-    shoulder.add(armCyl);
-    const hand = new THREE.Mesh(new THREE.SphereGeometry(0.075, 10, 10), skinMat);
-    hand.position.set(0, -0.04, 0.42);
+    shoulder.position.set(sideSign * 0.27, 0.68, 0.04);
+
+    const upperArm = new THREE.Mesh(new THREE.CylinderGeometry(0.068, 0.058, 0.38, 10), coatMat);
+    upperArm.rotation.x = Math.PI / 2;
+    upperArm.position.set(0, -0.02, 0.18);
+    upperArm.castShadow = true;
+    shoulder.add(upperArm);
+
+    const hand = new THREE.Mesh(new THREE.SphereGeometry(0.076, 12, 12), skinMat);
+    hand.position.set(0, -0.02, 0.4);
+    hand.castShadow = true;
     shoulder.add(hand);
-    return shoulder;
+
+    return { shoulder, hand };
   }
 
-  const leftArmGroup = buildArm(-1);
-  const rightArmGroup = buildArm(1);
-  bodyRoot.add(leftArmGroup, rightArmGroup);
+  const leftArm = buildArm(-1);
+  const rightArm = buildArm(1);
+  torsoPivot.add(leftArm.shoulder, rightArm.shoulder);
 
-  // --- PROPS (커피 머그컵 & 보온병, 마시멜로 꼬치, 선향불꽃, 망원경) ---
-  // 1. Warm Mug + Thermos Flask (보온병과 따뜻한 커피잔)
-  const coffeeGroup = new THREE.Group();
-  const mug = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.085, 0.075, 0.17, 12),
-    new THREE.MeshStandardMaterial({ color: 0xf6efe6, roughness: 0.3 })
-  );
-  coffeeGroup.add(mug);
-  const thermos = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.08, 0.08, 0.32, 12),
-    new THREE.MeshStandardMaterial({ color: 0x3a5a40, metalness: 0.4, roughness: 0.4 })
-  );
-  thermos.position.set(-0.28, -0.35, -0.15);
-  coffeeGroup.add(thermos);
-  coffeeGroup.position.set(0, 1.05, 0.56);
-  coffeeGroup.visible = false;
-  bodyRoot.add(coffeeGroup);
+  // --- PROPS ATTACHED TO CHARACTER ---
+  // 1. Firewood Log held in both hands (when placing a log onto the fire)
+  const heldLogMesh = createFirewoodLogMesh(0.85, 0.11);
+  heldLogMesh.rotation.z = Math.PI / 2;
+  heldLogMesh.position.set(0, 0.52, 0.48);
+  heldLogMesh.visible = false;
+  torsoPivot.add(heldLogMesh);
 
-  // 2. Marshmallow Stick (마시멜로 꼬치 - 불 가까이 굽기)
+  // 2. Marshmallow Skewers (Reaches right near the flames)
   const mallowGroup = new THREE.Group();
-  const stick = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.014, 0.014, 0.92, 6),
-    new THREE.MeshStandardMaterial({ color: 0xd4a373 })
+  const skewer = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.012, 0.012, 0.95, 8),
+    new THREE.MeshStandardMaterial({ color: 0xd8a47f })
   );
-  stick.rotation.x = Math.PI / 2;
-  stick.position.z = 0.44;
-  mallowGroup.add(stick);
+  skewer.rotation.x = Math.PI / 2;
+  skewer.position.z = 0.46;
+  mallowGroup.add(skewer);
+
   const mallowMesh = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.085, 0.085, 0.16, 12),
-    new THREE.MeshStandardMaterial({ color: 0xfffdf7, roughness: 0.4 })
+    new THREE.CylinderGeometry(0.082, 0.082, 0.15, 14),
+    new THREE.MeshStandardMaterial({ color: 0xfffdf9, roughness: 0.45 })
   );
   mallowMesh.rotation.x = Math.PI / 2;
-  mallowMesh.position.z = 0.9;
+  mallowMesh.position.z = 0.94;
   mallowGroup.add(mallowMesh);
-  mallowGroup.position.set(0.18, 1.02, 0.36);
+  mallowGroup.position.set(0.16, 0.56, 0.34);
   mallowGroup.visible = false;
-  bodyRoot.add(mallowGroup);
+  torsoPivot.add(mallowGroup);
 
-  // 3. Sparkler (선향불꽃)
-  const sparklerGroup = new THREE.Group();
-  const spWire = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.01, 0.01, 0.7, 6),
-    new THREE.MeshBasicMaterial({ color: 0xaaaaaa })
+  // 3. Thermos Flask & Steaming Coffee Mug
+  const coffeeGroup = new THREE.Group();
+  const mug = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.082, 0.072, 0.16, 14),
+    new THREE.MeshStandardMaterial({ color: 0xf4eee1, roughness: 0.3 })
   );
-  spWire.rotation.x = Math.PI / 2.2;
-  spWire.position.z = 0.34;
-  sparklerGroup.add(spWire);
-  const spTip = new THREE.Mesh(
-    new THREE.SphereGeometry(0.075, 8, 8),
+  coffeeGroup.add(mug);
+  const coffeeLiquid = new THREE.Mesh(
+    new THREE.CircleGeometry(0.072, 12),
+    new THREE.MeshBasicMaterial({ color: 0x3b2212 })
+  );
+  coffeeLiquid.rotation.x = -Math.PI / 2;
+  coffeeLiquid.position.y = 0.072;
+  coffeeGroup.add(coffeeLiquid);
+  coffeeGroup.position.set(0, 0.56, 0.46);
+  coffeeGroup.visible = false;
+  torsoPivot.add(coffeeGroup);
+
+  // Thermos sitting beside the camper's log
+  const thermosMesh = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.085, 0.085, 0.34, 12),
+    new THREE.MeshStandardMaterial({ color: 0x2f4f3e, metalness: 0.45, roughness: 0.38 })
+  );
+  thermosMesh.position.set(-0.56, 0.17, 0.12);
+  thermosMesh.castShadow = true;
+  group.add(thermosMesh);
+
+  // 4. Sparkler (선향불꽃)
+  const sparklerGroup = new THREE.Group();
+  const spRod = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.01, 0.01, 0.72, 6),
+    new THREE.MeshBasicMaterial({ color: 0xbbbbbb })
+  );
+  spRod.rotation.x = Math.PI / 2.15;
+  spRod.position.z = 0.35;
+  sparklerGroup.add(spRod);
+  const spCore = new THREE.Mesh(
+    new THREE.SphereGeometry(0.065, 10, 10),
     new THREE.MeshBasicMaterial({ color: 0xffea79 })
   );
-  spTip.position.set(0, -0.05, 0.68);
-  sparklerGroup.add(spTip);
-  sparklerGroup.position.set(-0.18, 1.04, 0.35);
+  spCore.position.set(0, -0.04, 0.7);
+  sparklerGroup.add(spCore);
+  sparklerGroup.position.set(-0.16, 0.56, 0.34);
   sparklerGroup.visible = false;
-  bodyRoot.add(sparklerGroup);
+  torsoPivot.add(sparklerGroup);
 
-  // 4. Stargazing Telescope (별멍 천체 망원경)
-  const telescopeGroup = new THREE.Group();
-  const tube = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.07, 0.1, 0.95, 12),
-    new THREE.MeshStandardMaterial({ color: 0xeae2b7, metalness: 0.5, roughness: 0.3 })
-  );
-  tube.rotation.x = Math.PI / 3.1;
-  tube.position.set(0, 1.48, 0.68);
-  telescopeGroup.add(tube);
-  for (let t = 0; t < 3; t++) {
-    const tLeg = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.02, 0.02, 1.45, 6),
-      new THREE.MeshStandardMaterial({ color: 0x2b2d42 })
-    );
-    const ta = (t / 3) * Math.PI * 2;
-    tLeg.position.set(Math.cos(ta) * 0.22, 0.68, 0.68 + Math.sin(ta) * 0.22);
-    tLeg.rotation.z = Math.cos(ta) * 0.22;
-    tLeg.rotation.x = Math.sin(ta) * 0.22;
-    telescopeGroup.add(tLeg);
-  }
-  telescopeGroup.visible = false;
-  group.add(telescopeGroup);
-
-  // Hitbox for clicking camper
+  // Hitbox for clicking another camper
   const hitBox = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.55, 0.55, 2.0, 8),
+    new THREE.CylinderGeometry(0.5, 0.5, 1.8, 8),
     new THREE.MeshBasicMaterial({ visible: false })
   );
-  hitBox.position.y = 1.0;
+  hitBox.position.y = 0.9;
   hitBox.userData = { camperId: user.id, seatIndex: user.seatIndex };
   group.add(hitBox);
   camperHitMeshes.push(hitBox);
-
-  const labelEl = document.createElement('div');
-  labelEl.className = 'label-3d camper-tag';
-  labelsContainer.appendChild(labelEl);
 
   scene.add(group);
 
@@ -1069,43 +783,46 @@ function createCamper3D(user) {
     id: user.id,
     group,
     bodyRoot,
+    torsoPivot,
     headGroup,
     leftLeg,
     rightLeg,
-    leftArmGroup,
-    rightArmGroup,
-    coffeeGroup,
+    leftArm,
+    rightArm,
+    heldLogMesh,
     mallowGroup,
     mallowMesh,
+    coffeeGroup,
     sparklerGroup,
-    spTip,
-    telescopeGroup,
+    spCore,
     hitBox,
-    labelEl,
     seatIndex: user.seatIndex,
-    action: user.action || 'idle',
-    posture: user.posture || 'sit',
+    action: user.action || 'hands',
     name: user.name,
     color: user.color,
+    roastStartTime: Date.now(),
     nodUntil: 0,
-    waveUntil: 0,
     offeringUntil: 0,
     offeringGiftType: 'coffee',
     receivingUntil: 0,
-    roastStartTime: Date.now(),
-    walkState: null // { targetX, targetZ, isWalking, returnToSeatAfterOffer, onArrive }
+    placingLogState: null, // Smooth 3D walk-to-fire and place-log animation
+    walkState: null,
+    poseBlend: {
+      torsoLean: 0.18,
+      leftArmX: -0.45,
+      leftArmY: 0.15,
+      rightArmX: -0.45,
+      rightArmY: -0.15,
+      headX: 0.08
+    }
   };
 }
 
 function syncCampers3D() {
   const activeIds = new Set();
-  const occupiedSeats = new Set();
-  const concept = getConceptType();
 
   state.users.forEach((u) => {
     activeIds.add(u.id);
-    occupiedSeats.add(u.seatIndex);
-
     let camper = camperMeshes.get(u.id);
     if (!camper) {
       camper = createCamper3D(u);
@@ -1114,59 +831,110 @@ function syncCampers3D() {
 
     const prevSeat = camper.seatIndex;
     camper.seatIndex = u.seatIndex;
-    camper.action = u.action || 'idle';
-    if (u.posture) {
-      camper.posture = u.posture;
-    } else {
-      camper.posture = concept === 'star' ? 'lie' : (concept === 'water' ? (u.seatIndex % 2 === 0 ? 'chair' : 'grass') : 'sit');
-    }
+    camper.action = u.action || 'hands';
     camper.name = u.name;
     camper.hitBox.userData.seatIndex = u.seatIndex;
 
     const seat = seats[u.seatIndex] || seats[0];
-    if (prevSeat !== u.seatIndex || (!camper.walkState && camper.group.position.lengthSq() < 0.01)) {
+    if (prevSeat !== u.seatIndex || (!camper.walkState && !camper.placingLogState && camper.group.position.lengthSq() < 0.01)) {
       camper.walkState = null;
       camper.group.position.set(seat.x, 0, seat.z);
       camper.group.rotation.y = seat.lookAngle;
     }
-
-    // Update Swiss Lake chair vs grass visibility for this seat
-    if (concept === 'water') {
-      seat.campChairGroup.visible = (camper.posture !== 'grass');
-    }
-
-    const isMe = u.id === state.clientId;
-    camper.labelEl.className = `label-3d camper-tag ${isMe ? 'is-me' : ''}`;
-    const actionBadge =
-      camper.action === 'coffee' ? ' ☕' :
-      camper.action === 'mallow' ? ' 🍡' :
-      camper.action === 'sparkler' ? ' 🎇' :
-      camper.action === 'stargaze' ? ' 🔭' :
-      camper.action === 'meditate' ? ' 🧘' : '';
-    camper.labelEl.textContent = isMe ? `나 · ${u.name}${actionBadge}` : `${u.name}${actionBadge}`;
   });
 
   for (const [id, camper] of camperMeshes.entries()) {
     if (!activeIds.has(id)) {
       scene.remove(camper.group);
-      camper.labelEl.remove();
       const idx = camperHitMeshes.indexOf(camper.hitBox);
       if (idx !== -1) camperHitMeshes.splice(idx, 1);
       camperMeshes.delete(id);
     }
   }
-
-  seats.forEach((s) => {
-    if (occupiedSeats.has(s.index)) {
-      s.labelEl.style.opacity = '0';
-    } else {
-      s.labelEl.style.opacity = state.zenMode ? '0' : '0.7';
-    }
-  });
 }
 
 // ====================================================
-// 6. GENTLE HAND-TO-HAND GIFT OFFERING & RECEIVING (NO THROWING!)
+// 7. NATURAL 3D FIREWOOD PLACEMENT & SPARK BURST
+// ====================================================
+const activeEffects = [];
+
+function triggerNaturalLogPlacement(fromSeatIndex) {
+  let actor = null;
+  for (const c of camperMeshes.values()) {
+    if (c.seatIndex === fromSeatIndex) {
+      actor = c;
+      break;
+    }
+  }
+
+  const seat = seats[fromSeatIndex] || seats[0];
+  if (!actor) return;
+
+  // Stand up with log in both hands, take a step toward the fire edge, lean down to place it gently, and sit back down
+  const fireEdgeDist = 1.95;
+  const targetX = Math.cos(seat.angle) * fireEdgeDist;
+  const targetZ = Math.sin(seat.angle) * fireEdgeDist;
+
+  actor.placingLogState = {
+    phase: 'walkToFire',
+    startTime: Date.now(),
+    startX: seat.x,
+    startZ: seat.z,
+    targetX,
+    targetZ,
+    seatAngle: seat.angle,
+    lookAngle: seat.lookAngle
+  };
+}
+
+function addPhysicalLogToFire(angle) {
+  // Keep up to 10 extra stacked logs on the fire so it visibly builds up
+  if (dynamicLogsGroup.children.length >= 10) {
+    const oldest = dynamicLogsGroup.children[0];
+    dynamicLogsGroup.remove(oldest);
+  }
+
+  const newLog = createFirewoodLogMesh(1.9, 0.13);
+  const r = 0.22 + Math.random() * 0.25;
+  newLog.position.set(Math.cos(angle) * r, 0.42 + dynamicLogsGroup.children.length * 0.04, Math.sin(angle) * r);
+  newLog.rotation.z = Math.cos(angle) * 0.48 + (Math.random() - 0.5) * 0.2;
+  newLog.rotation.x = Math.sin(angle) * 0.48 + (Math.random() - 0.5) * 0.2;
+  newLog.rotation.y = Math.random() * Math.PI;
+  dynamicLogsGroup.add(newLog);
+
+  soundEngine.playWoodThud();
+
+  // Burst of golden embers when the log settles onto the coals
+  for (let i = 0; i < 22; i++) {
+    const sp = new THREE.Mesh(
+      new THREE.SphereGeometry(0.032, 6, 6),
+      new THREE.MeshBasicMaterial({ color: 0xffd269, transparent: true, opacity: 1, blending: THREE.AdditiveBlending })
+    );
+    sp.position.set((Math.random() - 0.5) * 0.7, 0.45, (Math.random() - 0.5) * 0.7);
+    scene.add(sp);
+    const vx = (Math.random() - 0.5) * 1.8;
+    const vy = 1.6 + Math.random() * 2.2;
+    const vz = (Math.random() - 0.5) * 1.8;
+    const born = Date.now();
+    activeEffects.push({
+      update: (dt) => {
+        const age = (Date.now() - born) / 1100;
+        if (age >= 1) {
+          scene.remove(sp);
+          return false;
+        }
+        sp.position.x += vx * dt;
+        sp.position.y += vy * dt;
+        sp.position.z += vz * dt;
+        sp.material.opacity = 1 - age;
+        return true;
+      }
+    });
+  }
+}
+
+// ====================================================
+// 8. GENTLE TWO-HANDED COFFEE & MARSHMALLOW SHARING
 // ====================================================
 const giftOfferBanner = document.getElementById('giftOfferBanner');
 const giftOfferIcon = document.getElementById('giftOfferIcon');
@@ -1190,7 +958,6 @@ function findNearestNeighborCamper(fromSeatIndex) {
   return best;
 }
 
-// Walk gently over to neighbor and hold out gift with two hands
 function animateWalkAndOfferGift(fromSeat, targetSeat, giftType = 'coffee', actorName = '캠퍼') {
   let giver = null;
   let receiver = null;
@@ -1203,7 +970,6 @@ function animateWalkAndOfferGift(fromSeat, targetSeat, giftType = 'coffee', acto
   const targetPosSeat = seats[targetSeat] || seats[0];
   const giverSeat = seats[fromSeat] || seats[0];
 
-  // Stand point right beside the recipient
   const dx = giverSeat.x - targetPosSeat.x;
   const dz = giverSeat.z - targetPosSeat.z;
   const dist = Math.hypot(dx, dz) || 1;
@@ -1216,30 +982,25 @@ function animateWalkAndOfferGift(fromSeat, targetSeat, giftType = 'coffee', acto
     targetZ: standZ,
     isWalking: true,
     onArrive: () => {
-      // Face the recipient and hold out cup/marshmallow with both hands
       giver.group.rotation.y = Math.atan2(targetPosSeat.x - standX, targetPosSeat.z - standZ);
-      giver.offeringUntil = Date.now() + 6500;
-      spawnFloatingHeartOrEmoji(targetSeat, giftType === 'coffee' ? '☕🤲' : '🍡🤲');
+      giver.offeringUntil = Date.now() + 6000;
 
-      // If recipient is ME, show the gentle Accept Banner!
       if (targetSeat === state.mySeatIndex && fromSeat !== state.mySeatIndex) {
         state.pendingGiftOffer = { fromSeat, giftType, actorName };
         giftOfferIcon.textContent = giftType === 'coffee' ? '☕' : '🍡';
         const itemLabel = giftType === 'coffee' ? '따뜻한 보온병 커피' : '노릇하게 구운 마시멜로';
         giftOfferMessage.innerHTML = `<strong>${actorName}</strong>님이 다가와 두 손으로 ${itemLabel}를 건넵니다.`;
         giftOfferBanner.classList.remove('hidden');
-        soundEngine.playWarmChime();
+        soundEngine.playWarmBell();
       } else if (!receiver || receiver.id.startsWith('sim_')) {
-        // Simulated peaceful neighbor polite auto-accept after 1.6s
         setTimeout(() => {
           completeGiftAcceptance(fromSeat, targetSeat, giftType);
-        }, 1600);
+        }, 1500);
       }
     }
   };
 }
 
-// Both giver and receiver bow gently and hold the warm item
 function completeGiftAcceptance(fromSeat, targetSeat, giftType = 'coffee') {
   let giver = null;
   let receiver = null;
@@ -1248,18 +1009,17 @@ function completeGiftAcceptance(fromSeat, targetSeat, giftType = 'coffee') {
     if (c.seatIndex === targetSeat) receiver = c;
   }
 
-  soundEngine.playWarmChime();
-  spawnFloatingHeartOrEmoji(targetSeat, giftType === 'coffee' ? '☕🙏😊' : '🍡🙏😊');
+  soundEngine.playWarmBell();
 
   if (receiver) {
-    receiver.receivingUntil = Date.now() + 3500;
-    receiver.nodUntil = Date.now() + 2400;
+    receiver.receivingUntil = Date.now() + 3200;
+    receiver.nodUntil = Date.now() + 2200;
     receiver.action = giftType === 'coffee' ? 'coffee' : 'mallow';
   }
 
   if (giver) {
     giver.offeringUntil = 0;
-    giver.nodUntil = Date.now() + 2000;
+    giver.nodUntil = Date.now() + 1800;
     const homeSeat = seats[giver.seatIndex] || seats[0];
     setTimeout(() => {
       if (!giver) return;
@@ -1272,7 +1032,7 @@ function completeGiftAcceptance(fromSeat, targetSeat, giftType = 'coffee') {
           giver.walkState = null;
         }
       };
-    }, 1100);
+    }, 1000);
   }
 }
 
@@ -1283,543 +1043,112 @@ acceptGiftBtn.addEventListener('click', () => {
   state.pendingGiftOffer = null;
 
   state.myAction = giftType === 'coffee' ? 'coffee' : 'mallow';
-  sendServerAction({ type: 'pose', action: state.myAction, posture: state.myPosture });
+  updateDockActiveButtons();
+  sendServerAction({ type: 'pose', action: state.myAction });
   sendServerAction({ type: 'acceptGift', fromSeat, giftType });
   completeGiftAcceptance(fromSeat, state.mySeatIndex, giftType);
-  showRitualToast(`🙏 ${actorName}님이 건넨 따뜻한 마음을 두 손으로 받았습니다.`);
+  showCenterNotice(`${actorName}님의 따뜻한 마음을 두 손으로 받았습니다.`);
 });
 
 declineGiftBtn.addEventListener('click', () => {
   giftOfferBanner.classList.add('hidden');
   state.pendingGiftOffer = null;
-  showRitualToast('정중하게 마음만 받았습니다.');
 });
 
 // ====================================================
-// 7. PEACEFUL 3D PARTICLE & RITUAL EFFECTS
+// 9. ACTION BUTTON HANDLERS
 // ====================================================
-const activeEffects = [];
-
-function spawnFloatingHeartOrEmoji(seatIndex, emojiText = '😊🙏') {
-  const seat = seats[seatIndex] || seats[0];
-  const el = document.createElement('div');
-  el.className = 'label-3d nod-emoji';
-  el.textContent = emojiText;
-  labelsContainer.appendChild(el);
-
-  const startPos = new THREE.Vector3(seat.x, 2.3, seat.z);
-  const startTime = Date.now();
-
-  activeEffects.push({
-    update: () => {
-      const t = (Date.now() - startTime) / 2200;
-      if (t >= 1) {
-        el.remove();
-        return false;
-      }
-      const pos = startPos.clone();
-      pos.y += t * 1.1;
-      projectToScreen(pos, el);
-      el.style.opacity = String(1 - t);
-      return true;
-    }
+function updateDockActiveButtons() {
+  document.querySelectorAll('#dockActionsContainer .action-btn').forEach((btn) => {
+    const act = btn.dataset.action;
+    btn.classList.toggle('active-pose', act === state.myAction);
   });
 }
 
-function spawnFlyingLogEffect(fromSeatIndex) {
-  const seat = seats[fromSeatIndex] || seats[0];
-  const logMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.11, 0.9, 8), woodMat);
-  logMesh.position.set(seat.x, 1.1, seat.z);
-  scene.add(logMesh);
-
-  const startPos = logMesh.position.clone();
-  const endPos = new THREE.Vector3(0, 0.45, 0);
-  const startTime = Date.now();
-
-  activeEffects.push({
-    update: () => {
-      const t = Math.min(1, (Date.now() - startTime) / 700);
-      logMesh.position.lerpVectors(startPos, endPos, t);
-      logMesh.position.y += Math.sin(t * Math.PI) * 1.6;
-      logMesh.rotation.x += 0.12;
-      if (t >= 1) {
-        scene.remove(logMesh);
-        fireLight.intensity = 4.2;
-        return false;
-      }
-      return true;
-    }
+document.querySelectorAll('#dockActionsContainer .action-btn').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    triggerCampfireAction(btn.dataset.action);
   });
-}
+});
 
-function spawnWishLanternEffect(fromSeatIndex) {
-  const seat = seats[fromSeatIndex] || seats[0];
-  const group = new THREE.Group();
-  const glow = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.24, 0.18, 0.42, 10),
-    new THREE.MeshBasicMaterial({ color: 0xffb74d, transparent: true, opacity: 0.9 })
-  );
-  group.add(glow);
-
-  const concept = getConceptType();
-  if (concept === 'water') {
-    group.position.set(seat.x * 0.6, 0.18, 0.5);
-  } else {
-    group.position.set(seat.x * 0.7, 1.3, seat.z * 0.7);
-  }
-  scene.add(group);
-  const startTime = Date.now();
-
-  activeEffects.push({
-    update: () => {
-      const elapsed = (Date.now() - startTime) / 1000;
-      if (elapsed > 14) {
-        scene.remove(group);
-        return false;
-      }
-      if (concept === 'water') {
-        // Drift out onto the Swiss Lake toward the Alps
-        group.position.z -= 0.025;
-        group.position.x += Math.sin(elapsed * 1.2) * 0.008;
-        group.position.y = 0.14 + Math.sin(elapsed * 3) * 0.03;
-      } else {
-        group.position.y += 0.028;
-        group.position.x += Math.sin(elapsed * 1.1) * 0.012;
-      }
-      glow.material.opacity = Math.max(0, 0.92 - elapsed / 14);
-      return true;
-    }
-  });
-}
-
-function spawnLakeRippleEffect(fromSeatIndex) {
-  const seat = seats[fromSeatIndex] || seats[0];
-  const ringGeo = new THREE.RingGeometry(0.15, 0.26, 32);
-  const ringMat = new THREE.MeshBasicMaterial({
-    color: 0xb8f2ff,
-    side: THREE.DoubleSide,
-    transparent: true,
-    opacity: 0.85
-  });
-  const ring = new THREE.Mesh(ringGeo, ringMat);
-  ring.rotation.x = -Math.PI / 2;
-  ring.position.set(seat.x * 0.5, 0.08, -6 - Math.random() * 6);
-  scene.add(ring);
-
-  const startTime = Date.now();
-  soundEngine.playSingingBowlNote(432);
-
-  activeEffects.push({
-    update: () => {
-      const t = (Date.now() - startTime) / 2800;
-      if (t >= 1) {
-        scene.remove(ring);
-        ringGeo.dispose();
-        ringMat.dispose();
-        return false;
-      }
-      const scale = 1 + t * 14;
-      ring.scale.set(scale, scale, 1);
-      ringMat.opacity = (1 - t) * 0.8;
-      return true;
-    }
-  });
-}
-
-function spawnShootingStarEffect() {
-  const startX = (Math.random() - 0.5) * 55;
-  const startY = 30 + Math.random() * 18;
-  const startZ = -22 - Math.random() * 25;
-  const endX = startX + (Math.random() > 0.5 ? 26 : -26);
-  const endY = startY - 12 - Math.random() * 6;
-  const endZ = startZ + (Math.random() - 0.5) * 10;
-
-  const trailGeo = new THREE.CylinderGeometry(0.02, 0.14, 4.5, 8);
-  trailGeo.rotateZ(Math.PI / 2);
-  const trailMat = new THREE.MeshBasicMaterial({
-    color: 0xffffff,
-    transparent: true,
-    opacity: 0.95,
-    blending: THREE.AdditiveBlending
-  });
-  const starMesh = new THREE.Mesh(trailGeo, trailMat);
-  scene.add(starMesh);
-
-  const sVec = new THREE.Vector3(startX, startY, startZ);
-  const eVec = new THREE.Vector3(endX, endY, endZ);
-  const startTime = Date.now();
-
-  activeEffects.push({
-    update: () => {
-      const t = (Date.now() - startTime) / 950;
-      if (t >= 1) {
-        scene.remove(starMesh);
-        trailGeo.dispose();
-        trailMat.dispose();
-        return false;
-      }
-      starMesh.position.lerpVectors(sVec, eVec, t);
-      starMesh.lookAt(eVec);
-      trailMat.opacity = Math.sin(t * Math.PI);
-      return true;
-    }
-  });
-}
-
-// ====================================================
-// 8. THEME & ENVIRONMENT SWITCHER (불멍 / 물멍 / 별멍)
-// ====================================================
-function applyRoomEnvironment(room) {
-  const meta = ROOM_META[room] || ROOM_META['fire-01'];
-  const concept = getConceptType(room);
-
-  document.getElementById('currentRoomName').textContent = meta.name;
-  document.getElementById('currentRegionTag').textContent = `${state.region.toUpperCase()} · #${state.instance}`;
-  const miniIcon = document.getElementById('modeMiniIcon');
-  if (miniIcon) miniIcon.textContent = meta.icon;
-
-  // Highlight active tabs
-  document.querySelectorAll('.concept-tab').forEach((btn) => {
-    btn.classList.toggle('active', btn.dataset.room === room);
-  });
-  document.querySelectorAll('.mode-chip').forEach((btn) => {
-    btn.classList.toggle('active', btn.dataset.switchRoom === room);
-  });
-  document.querySelectorAll('.room-item').forEach((btn) => {
-    btn.classList.toggle('active', btn.dataset.room === room);
-  });
-
-  // Toggle 3D World Groups
-  fireWorldGroup.visible = (concept === 'fire');
-  waterWorldGroup.visible = (concept === 'water');
-  starWorldGroup.visible = (concept === 'star');
-
-  if (concept === 'fire') {
-    const isRain = room === 'rain-04';
-    const bgHex = isRain ? 0x080c14 : 0x0b0811;
-    scene.background.setHex(bgHex);
-    scene.fog.color.setHex(bgHex);
-    scene.fog.density = 0.015;
-    groundMat.color.setHex(0x181310);
-    hemiLight.intensity = 0.55;
-    sunMoonLight.intensity = 0.25;
-    fireLight.visible = true;
-    starField.visible = true;
-    starMat.opacity = isRain ? 0.15 : 0.65;
-
-    state.myPosture = 'sit';
-    camControl.targetPhi = 0.42;
-    camControl.targetRadius = 14.2;
-    camControl.targetLookAtY = 1.25;
-  } else if (concept === 'water') {
-    fireLight.visible = false;
-    updateSwissLakeDayNightVisuals();
-    if (state.myPosture !== 'chair' && state.myPosture !== 'grass') {
-      state.myPosture = state.mySeatIndex % 2 === 0 ? 'chair' : 'grass';
-    }
-    // Position camera behind the shoreline looking across the Swiss Lake & Alps
-    camControl.targetTheta = 0.0;
-    camControl.targetPhi = 0.34;
-    camControl.targetRadius = 14.8;
-    camControl.targetLookAtY = 1.8;
-  } else if (concept === 'star') {
-    // Pitch-black Gangwon-do night sky filled with pouring stars
-    scene.background.setHex(0x020309);
-    scene.fog.color.setHex(0x020309);
-    scene.fog.density = 0.004;
-    groundMat.color.setHex(0x090d16);
-    hemiLight.color.setHex(0x2c3e66);
-    hemiLight.groundColor.setHex(0x05070c);
-    hemiLight.intensity = 0.65;
-    sunMoonLight.color.setHex(0x9bbcff);
-    sunMoonLight.intensity = 0.45;
-    fireLight.visible = false;
-    starField.visible = true;
-    starMat.opacity = 1.0;
-
-    if (state.myPosture !== 'lie' && state.myPosture !== 'sit') {
-      state.myPosture = 'lie';
-    }
-    updateStarCameraForPosture();
-  }
-
-  layoutSeatsForCurrentConcept();
-  renderConceptActionDock();
-  syncCampers3D();
-
-  // Apply peaceful default audio balance
-  const sd = meta.soundDefaults;
-  document.getElementById('volFire').value = sd.fire;
-  document.getElementById('valFire').textContent = `${sd.fire}%`;
-  document.getElementById('volWind').value = sd.wind;
-  document.getElementById('valWind').textContent = `${sd.wind}%`;
-  document.getElementById('volRain').value = sd.rain;
-  document.getElementById('valRain').textContent = `${sd.rain}%`;
-  document.getElementById('volNight').value = sd.night;
-  document.getElementById('valNight').textContent = `${sd.night}%`;
-
-  soundEngine.setVolume('fire', sd.fire);
-  soundEngine.setVolume('wind', sd.wind);
-  soundEngine.setVolume('rain', sd.rain);
-  soundEngine.setVolume('night', sd.night);
-}
-
-function updateSwissLakeDayNightVisuals() {
-  if (getConceptType() !== 'water') return;
-  if (state.waterDayMode) {
-    // Sunny Swiss Alpine Emerald Lake (낮: 에메랄드 호수와 만년설)
-    scene.background.setHex(0x68a6c8);
-    scene.fog.color.setHex(0x8bc1db);
-    scene.fog.density = 0.006;
-    groundMat.color.setHex(0x2d4c2b); // Lush alpine meadow shore
-    swissLakeMat.color.setHex(0x169bb8);
-    alpsRockMat.color.setHex(0x4a5d70);
-    alpsSnowMat.color.setHex(0xffffff);
-    hemiLight.color.setHex(0xdff4ff);
-    hemiLight.groundColor.setHex(0x3a5a36);
-    hemiLight.intensity = 1.15;
-    sunMoonLight.color.setHex(0xfff6e0);
-    sunMoonLight.intensity = 1.1;
-    starField.visible = false;
-  } else {
-    // Starry Moonlight Swiss Lake (밤: 달빛 비치는 고요한 호수)
-    scene.background.setHex(0x071324);
-    scene.fog.color.setHex(0x071324);
-    scene.fog.density = 0.01;
-    groundMat.color.setHex(0x102019);
-    swissLakeMat.color.setHex(0x0b3b54);
-    alpsRockMat.color.setHex(0x1d2836);
-    alpsSnowMat.color.setHex(0xc8deff);
-    hemiLight.color.setHex(0x3b5980);
-    hemiLight.groundColor.setHex(0x0a1410);
-    hemiLight.intensity = 0.65;
-    sunMoonLight.color.setHex(0xa8caff);
-    sunMoonLight.intensity = 0.6;
-    starField.visible = true;
-    starMat.opacity = 0.85;
-  }
-}
-
-function updateStarCameraForPosture() {
-  if (getConceptType() !== 'star') return;
-  if (state.myPosture === 'lie') {
-    // Low angle looking across the lying character up into the starry night sky & constellations
-    camControl.targetTheta = 0.0;
-    camControl.targetPhi = 0.16;
-    camControl.targetRadius = 11.5;
-    camControl.targetLookAtY = 4.2;
-  } else {
-    camControl.targetPhi = 0.28;
-    camControl.targetRadius = 13.0;
-    camControl.targetLookAtY = 2.8;
-  }
-}
-
-// ====================================================
-// 9. DYNAMIC CONCEPT-SPECIFIC ACTION DOCK
-// ====================================================
-const dockActionsContainer = document.getElementById('dockActionsContainer');
-const dockHintText = document.getElementById('dockHintText');
-
-function renderConceptActionDock() {
-  const concept = getConceptType();
-  const actions = CONCEPT_DOCK_ACTIONS[concept] || CONCEPT_DOCK_ACTIONS.fire;
-  dockActionsContainer.innerHTML = '';
-
-  actions.forEach((act) => {
-    const btn = document.createElement('button');
-    btn.className = 'action-btn';
-    btn.dataset.actionId = act.id;
-
-    // Dynamic label state
-    let label = act.label;
-    let icon = act.icon;
-    if (act.id === 'toggleDayNight') {
-      icon = state.waterDayMode ? '☀️' : '🌙';
-      label = state.waterDayMode ? '스위스 낮 (윤슬)' : '스위스 밤 (달빛)';
-    } else if (act.id === 'toggleWaterSeat') {
-      icon = state.myPosture === 'grass' ? '🌿' : '🪑';
-      label = state.myPosture === 'grass' ? '수풀 앉기 중' : '캠핑의자 앉기 중';
-    } else if (act.id === 'toggleLieSit') {
-      icon = state.myPosture === 'lie' ? '🛌' : '🧘';
-      label = state.myPosture === 'lie' ? '매트에 누워 별보기' : '매트에 앉아 별보기';
-    }
-
-    const isActive =
-      (act.id === 'hands' && state.myAction === 'hands') ||
-      (act.id === 'mallow' && state.myAction === 'mallow') ||
-      (act.id === 'sparkler' && state.myAction === 'sparkler') ||
-      (act.id === 'meditate' && state.myAction === 'meditate') ||
-      (act.id === 'stargaze' && state.myAction === 'stargaze') ||
-      (act.id === 'toggleConstellation' && state.showConstellations);
-
-    if (isActive) btn.classList.add('active-pose');
-
-    btn.innerHTML = `
-      <span class="act-icon">${icon}</span>
-      <span class="act-label">${label}</span>
-      <span class="act-key">${act.key}</span>
-    `;
-    btn.addEventListener('click', () => triggerConceptAction(act.id));
-    dockActionsContainer.appendChild(btn);
-  });
-
-  if (concept === 'fire') {
-    dockHintText.textContent = '통나무 클릭: 자리 이동 · 옆사람 클릭: 다가가 커피/마시멜로 두 손으로 건네기';
-  } else if (concept === 'water') {
-    dockHintText.textContent = '낮/밤 전환으로 스위스 호수의 에메랄드 윤슬과 달빛을 모두 느껴보세요';
-  } else {
-    dockHintText.textContent = '매트에 누워 밤하늘 별자리와 쏟아지는 별똥별을 바라보며 마음을 비워보세요';
-  }
-}
-
-function triggerConceptAction(actionId) {
+function triggerCampfireAction(actionId) {
   soundEngine.init();
   const myCamper = camperMeshes.get(state.clientId);
 
   switch (actionId) {
-    case 'wave': {
-      if (myCamper) myCamper.waveUntil = Date.now() + 2600;
-      spawnFloatingHeartOrEmoji(state.mySeatIndex, '👋😊');
-      sendServerAction({ type: 'wave' });
-      showRitualToast('👋 주변 사람들에게 다정하게 손을 흔들어 인사합니다.');
-      break;
-    }
     case 'hands': {
-      state.myAction = state.myAction === 'hands' ? 'idle' : 'hands';
-      sendServerAction({ type: 'pose', action: state.myAction, posture: state.myPosture });
-      renderConceptActionDock();
-      showRitualToast(state.myAction === 'hands' ? '🤲 모닥불 가까이 두 손을 뻗어 따뜻하게 녹입니다.' : '편안한 자세로 돌아갑니다.');
+      state.myAction = 'hands';
+      updateDockActiveButtons();
+      sendServerAction({ type: 'pose', action: 'hands' });
+      showCenterNotice('모닥불 가까이 두 손을 뻗어 온기를 느낍니다.');
       break;
     }
     case 'log': {
-      spawnFlyingLogEffect(state.mySeatIndex);
+      state.logsAddedCount++;
+      state.fireHeat = Math.min(1200, state.fireHeat + 38);
+      document.getElementById('logsCountDisplay').textContent = `${state.logsAddedCount}개`;
+      document.getElementById('fireTempDisplay').textContent = `${state.fireHeat}°C`;
+
+      triggerNaturalLogPlacement(state.mySeatIndex);
       sendServerAction({ type: 'throwLog' });
-      showRitualToast('🪵 모닥불에 장작을 조심스레 더해 온기를 나눕니다.');
+      showCenterNotice('장작을 들고 모닥불에 조심스레 얹었습니다.');
       break;
     }
     case 'mallow': {
-      state.myAction = state.myAction === 'mallow' ? 'idle' : 'mallow';
+      state.myAction = state.myAction === 'mallow' ? 'hands' : 'mallow';
       if (myCamper) myCamper.roastStartTime = Date.now();
-      sendServerAction({ type: 'pose', action: state.myAction, posture: state.myPosture });
-      renderConceptActionDock();
-      showRitualToast('🍡 모닥불 가까이 마시멜로를 노릇노릇하게 굽습니다.');
+      updateDockActiveButtons();
+      sendServerAction({ type: 'pose', action: state.myAction });
+      if (state.myAction === 'mallow') {
+        showCenterNotice('불꽃 가까이 마시멜로를 노릇노릇하게 굽습니다.');
+      }
       break;
     }
-    case 'giveMallow':
-    case 'giveCoffee': {
-      const giftType = actionId === 'giveCoffee' ? 'coffee' : 'mallow';
+    case 'coffee': {
+      state.myAction = state.myAction === 'coffee' ? 'hands' : 'coffee';
+      updateDockActiveButtons();
+      sendServerAction({ type: 'pose', action: state.myAction });
+      if (state.myAction === 'coffee') {
+        showCenterNotice('보온병에서 따뜻한 커피를 따라 두 손으로 감싸 쥠니다.');
+      }
+      break;
+    }
+    case 'give': {
       const neighbor = findNearestNeighborCamper(state.mySeatIndex);
-      const targetSeat = neighbor ? neighbor.seatIndex : (state.mySeatIndex + 1) % MAX_SEATS;
-      const targetName = neighbor ? neighbor.name : '옆자리 캠퍼';
-
-      animateWalkAndOfferGift(state.mySeatIndex, targetSeat, giftType, state.myNickname);
-      sendServerAction({ type: 'offerGift', targetSeat, giftType });
-      showRitualToast(
-        giftType === 'coffee'
-          ? `☕ ${targetName}님에게 걸어가 보온병의 따뜻한 커피를 두 손으로 건넵니다.`
-          : `🎁 ${targetName}님에게 걸어가 잘 구운 마시멜로를 두 손으로 건넵니다.`
-      );
+      if (!neighbor) {
+        // Temporarily enable quiet forest companion so solo user can still experience sharing if desired
+        state.enableSoloCompanion = true;
+        const toggleEl = document.getElementById('soloCompanionToggle');
+        if (toggleEl) toggleEl.checked = true;
+        rebuildActiveUsersList();
+      }
+      const target = findNearestNeighborCamper(state.mySeatIndex);
+      if (target) {
+        const giftType = state.myAction === 'mallow' ? 'mallow' : 'coffee';
+        animateWalkAndOfferGift(state.mySeatIndex, target.seatIndex, giftType, state.myNickname);
+        sendServerAction({ type: 'offerGift', targetSeat: target.seatIndex, giftType });
+        showCenterNotice(
+          giftType === 'coffee'
+            ? `${target.name}님에게 다가가 따뜻한 커피를 두 손으로 건넵니다.`
+            : `${target.name}님에게 다가가 구운 마시멜로를 두 손으로 건넵니다.`
+        );
+      }
       break;
     }
     case 'sparkler': {
-      state.myAction = state.myAction === 'sparkler' ? 'idle' : 'sparkler';
-      sendServerAction({ type: 'pose', action: state.myAction, posture: state.myPosture });
-      renderConceptActionDock();
-      showRitualToast('🎇 타닥타닥 잔잔하게 타오르는 선향불꽃을 바라봅니다.');
-      break;
-    }
-    case 'toggleDayNight': {
-      state.waterDayMode = !state.waterDayMode;
-      updateSwissLakeDayNightVisuals();
-      renderConceptActionDock();
-      sendServerAction({ type: 'toggleWaterDayNight', waterDayMode: state.waterDayMode });
-      showRitualToast(
-        state.waterDayMode
-          ? '☀️ 스위스 알프스의 맑은 낮, 에메랄드빛 호수에 윤슬이 반짝입니다.'
-          : '🌙 스위스 알프스의 고요한 밤, 만년설과 호수 위에 달빛이 내려앉습니다.'
-      );
-      break;
-    }
-    case 'toggleWaterSeat': {
-      state.myPosture = state.myPosture === 'grass' ? 'chair' : 'grass';
-      if (myCamper) myCamper.posture = state.myPosture;
-      const mySeat = seats[state.mySeatIndex];
-      if (mySeat) mySeat.campChairGroup.visible = (state.myPosture === 'chair');
-      sendServerAction({ type: 'posture', posture: state.myPosture });
-      renderConceptActionDock();
-      showRitualToast(
-        state.myPosture === 'chair'
-          ? '🪑 편안한 우드 캠핑 의자에 기대어 스위스 호수를 바라봅니다.'
-          : '🌿 호숫가 부드러운 수풀 위에 다리를 뻗고 앉아 물결을 느낍니다.'
-      );
-      break;
-    }
-    case 'meditate': {
-      state.myAction = state.myAction === 'meditate' ? 'idle' : 'meditate';
-      soundEngine.playSingingBowlNote(432);
-      sendServerAction({ type: 'pose', action: state.myAction, posture: state.myPosture });
-      renderConceptActionDock();
-      showRitualToast('🧘 깊게 숨을 들이마시고 내쉬며 내면의 평화(Inner Peace)를 느낍니다.');
-      break;
-    }
-    case 'lantern': {
-      spawnWishLanternEffect(state.mySeatIndex);
-      sendServerAction({ type: 'floatLantern' });
-      showRitualToast('🪷 잔잔한 스위스 호수 위로 따뜻한 소원 연등을 띄워 보냅니다.');
-      break;
-    }
-    case 'skipStone': {
-      spawnLakeRippleEffect(state.mySeatIndex);
-      sendServerAction({ type: 'skipStone' });
-      showRitualToast('🪨 에메랄드빛 호수 위에 맑고 고요한 물결 파문이 번져갑니다.');
-      break;
-    }
-    case 'toggleLieSit': {
-      state.myPosture = state.myPosture === 'lie' ? 'sit' : 'lie';
-      if (myCamper) myCamper.posture = state.myPosture;
-      updateStarCameraForPosture();
-      sendServerAction({ type: 'posture', posture: state.myPosture });
-      renderConceptActionDock();
-      showRitualToast(
-        state.myPosture === 'lie'
-          ? '🛌 캠핑 매트에 편안히 누워 강원도 산골짜기 밤하늘에 쏟아지는 별을 바라봅니다.'
-          : '🧘 캠핑 매트 위에 일어나 앉아 밤공기를 마십니다.'
-      );
-      break;
-    }
-    case 'stargaze': {
-      state.myAction = state.myAction === 'stargaze' ? 'idle' : 'stargaze';
-      if (state.myAction === 'stargaze') {
-        state.myPosture = 'sit';
-        updateStarCameraForPosture();
+      state.myAction = state.myAction === 'sparkler' ? 'hands' : 'sparkler';
+      updateDockActiveButtons();
+      sendServerAction({ type: 'pose', action: state.myAction });
+      if (state.myAction === 'sparkler') {
+        showCenterNotice('타닥타닥 잔잔하게 타오르는 선향불꽃을 바라봅니다.');
       }
-      sendServerAction({ type: 'pose', action: state.myAction, posture: state.myPosture });
-      renderConceptActionDock();
-      showRitualToast(
-        state.myAction === 'stargaze'
-          ? '🔭 천체 망원경으로 밤하늘 깊은 곳의 성단과 별자리를 관측합니다.'
-          : '망원경 관측을 마치고 밤하늘 전체를 바라봅니다.'
-      );
       break;
     }
-    case 'shootingStar': {
-      spawnShootingStarEffect();
-      setTimeout(spawnShootingStarEffect, 450);
-      sendServerAction({ type: 'shootingStar' });
-      soundEngine.playSingingBowlNote(512);
-      showRitualToast('🌠 새까만 산골짜기 밤하늘을 가로지르는 별똥별에 조용히 소원을 빕니다.');
-      break;
-    }
-    case 'toggleConstellation': {
-      state.showConstellations = !state.showConstellations;
-      constellationGroup.visible = state.showConstellations;
-      renderConceptActionDock();
-      showRitualToast(
-        state.showConstellations
-          ? '✨ 밤하늘의 별자리 선과 이름을 표시합니다.'
-          : '✨ 별자리 선을 숨기고 순수한 밤하늘 별빛만 감상합니다.'
-      );
+    case 'aurora': {
+      state.auroraUntil = Date.now() + 14000;
+      sendServerAction({ type: 'aurora' });
+      soundEngine.playWarmBell();
+      showCenterNotice('신비로운 오로라 불꽃 가루가 모닥불을 물들입니다.');
       break;
     }
     case 'worry': {
@@ -1830,102 +1159,189 @@ function triggerConceptAction(actionId) {
 }
 
 // ====================================================
-// 10. ANIMATION LOOP (3D LEGS, LYING POSTURE, WATER, STARS)
+// 10. MAIN ANIMATION LOOP (1ST-PERSON / OVER-THE-SHOULDER & SMOOTH RIG)
 // ====================================================
 const clock = new THREE.Clock();
 
-function projectToScreen(pos3D, domElem) {
-  const v = pos3D.clone().project(camera);
-  if (v.z > 1) {
-    domElem.style.opacity = '0';
-    return;
-  }
-  const x = (v.x * 0.5 + 0.5) * window.innerWidth;
-  const y = (-(v.y * 0.5) + 0.5) * window.innerHeight;
-  domElem.style.left = `${x}px`;
-  domElem.style.top = `${y}px`;
+function lerp(a, b, t) {
+  return a + (b - a) * t;
 }
 
 function animate() {
   requestAnimationFrame(animate);
+  const dt = Math.min(0.05, clock.getDelta());
   const elapsed = clock.getElapsedTime();
   const now = Date.now();
-  const concept = getConceptType();
 
-  // Smooth Camera Interpolation
-  camControl.theta += (camControl.targetTheta - camControl.theta) * 0.07;
-  camControl.phi += (camControl.targetPhi - camControl.phi) * 0.07;
-  camControl.radius += (camControl.targetRadius - camControl.radius) * 0.07;
-  camControl.lookAtY += (camControl.targetLookAtY - camControl.lookAtY) * 0.07;
+  const mySeat = seats[state.mySeatIndex] || seats[0];
+  const baseAngle = mySeat.angle + camControl.orbitOffset;
 
-  const camX = camControl.radius * Math.sin(camControl.theta) * Math.cos(camControl.phi);
-  const camY = Math.max(0.8, camControl.radius * Math.sin(camControl.phi));
-  const camZ = camControl.radius * Math.cos(camControl.theta) * Math.cos(camControl.phi);
-  camera.position.set(camX, camY, camZ);
-  camera.lookAt(0, camControl.lookAtY, concept === 'water' ? -6 : (concept === 'star' ? -8 : 0));
+  // --- CAMERA POV CALCULATION (Focused on MY Character & the Fire!) ---
+  const targetCamPos = new THREE.Vector3();
+  const targetLookAt = new THREE.Vector3();
 
-  // Concept 1: Animate Campfire Flames
-  if (concept === 'fire') {
-    const heatScale = 0.85 + (state.fireHeat - 650) / 900;
-    flameCones.forEach((cone) => {
-      const u = cone.userData;
-      cone.scale.y = heatScale * (1 + Math.sin(elapsed * u.speed + u.phase) * 0.22);
-      cone.position.x = u.baseX + Math.sin(elapsed * 2.5 + u.phase) * 0.05;
-      cone.position.z = u.baseZ + Math.cos(elapsed * 2.2 + u.phase) * 0.05;
-    });
-    fireLight.intensity = 2.6 + Math.sin(elapsed * 7.5) * 0.25 + Math.cos(elapsed * 13.0) * 0.15;
+  if (state.povMode === 'first') {
+    // True 1st-Person POV: Sitting right on my log looking directly into the crackling fire
+    const r = Math.max(1.9, 2.75 + camControl.zoomOffset * 0.4);
+    targetCamPos.set(
+      Math.cos(baseAngle) * r,
+      1.32 + camControl.pitchOffset * 0.8,
+      Math.sin(baseAngle) * r
+    );
+    targetLookAt.set(0, 0.78, 0);
+  } else if (state.povMode === 'shoulder') {
+    // Close Over-the-Shoulder POV (Default): My character is large & clear in foreground, fire fills the center!
+    const distBehind = Math.max(4.6, Math.min(9.5, 5.85 + camControl.zoomOffset));
+    const shoulderSideAngle = baseAngle + 0.11; // Slight offset so character + fire are both framed
+    targetCamPos.set(
+      Math.cos(shoulderSideAngle) * distBehind,
+      2.18 + camControl.pitchOffset * 1.4,
+      Math.sin(shoulderSideAngle) * distBehind
+    );
+    targetLookAt.set(0, 0.96, 0);
+  } else {
+    // Wide Campfire Circle POV
+    const distWide = Math.max(7.0, Math.min(13.5, 9.6 + camControl.zoomOffset));
+    targetCamPos.set(
+      Math.cos(baseAngle) * distWide,
+      3.8 + camControl.pitchOffset * 1.8,
+      Math.sin(baseAngle) * distWide
+    );
+    targetLookAt.set(0, 1.0, 0);
   }
 
-  // Concept 2: Animate Swiss Lake Shimmer & Shore Reeds
-  if (concept === 'water') {
-    shimmerParticles.forEach((sh) => {
-      sh.position.x = sh.userData.baseX + Math.sin(elapsed * sh.userData.speed + sh.userData.phase) * 0.35;
-      sh.material.opacity = (state.waterDayMode ? 0.65 : 0.35) * (0.5 + 0.5 * Math.sin(elapsed * 3 + sh.userData.phase));
-    });
-    grassTufts.forEach((tuft) => {
-      tuft.rotation.z = Math.sin(elapsed * 1.4 + tuft.userData.phase) * 0.08;
-    });
-  }
+  camControl.currentPos.lerp(targetCamPos, 0.08);
+  camControl.currentLookAt.lerp(targetLookAt, 0.08);
+  camera.position.copy(camControl.currentPos);
+  camera.lookAt(camControl.currentLookAt);
 
-  // Concept 3: Occasional natural shooting stars in Gangwon-do sky
-  if (concept === 'star') {
-    starField.rotation.y = elapsed * 0.004;
-    if (Math.random() < 0.005) {
-      spawnShootingStarEffect();
-    }
-  }
+  // --- ANIMATE VOLUMETRIC SHADER FLAMES & LIGHT ---
+  const isAurora = now < state.auroraUntil;
+  const heatScale = 0.88 + (state.fireHeat - 650) / 850;
 
-  // Constellation Labels projection
-  constellationLabelItems.forEach((item) => {
-    if (concept === 'star' && state.showConstellations && !state.zenMode) {
-      projectToScreen(item.pos, item.el);
-      item.el.style.opacity = '0.82';
+  shaderFlames.forEach((mesh, idx) => {
+    const u = mesh.material.uniforms;
+    u.uTime.value = elapsed;
+    u.uHeatScale.value = heatScale;
+
+    if (isAurora) {
+      u.uColorCore.value.setHex(0xd8fff8);
+      u.uColorMid.value.setHex(idx % 2 === 0 ? 0x00d4aa : 0x8a5cf6);
+      u.uColorTip.value.setHex(0x3b096c);
     } else {
-      item.el.style.opacity = '0';
+      u.uColorCore.value.setHex(0xfff7cc);
+      u.uColorMid.value.setHex(0xff8418);
+      u.uColorTip.value.setHex(0xd92600);
     }
   });
 
-  // Update Seat Labels
-  seats.forEach((s) => {
-    projectToScreen(new THREE.Vector3(s.x, 0.7, s.z), s.labelEl);
+  fireLight.color.setHex(isAurora ? 0x48e5c2 : 0xff7722);
+  fireLight.intensity = (3.4 + Math.sin(elapsed * 8.2) * 0.28 + Math.cos(elapsed * 14.5) * 0.16) * heatScale;
+  fireLight.position.x = Math.sin(elapsed * 5.0) * 0.08;
+  fireLight.position.z = Math.cos(elapsed * 4.3) * 0.08;
+
+  // --- ANIMATE RISING EMBERS ---
+  emberMeshes.forEach((sp) => {
+    const u = sp.userData;
+    sp.position.y += u.vy * dt;
+    sp.position.x += Math.sin(elapsed * u.swaySpeed + u.phase) * u.swayAmp;
+    sp.position.z += Math.cos(elapsed * u.swaySpeed + u.phase) * u.swayAmp;
+    const lifeRatio = sp.position.y / u.maxY;
+    sp.material.opacity = Math.max(0, (1 - lifeRatio) * 0.9);
+    if (sp.position.y >= u.maxY) {
+      resetEmberParticle(sp, false);
+    }
   });
 
-  // Update Campers (Walking, Sitting, Grass Sitting, Lying on Mat, Two-Hand Offering/Receiving)
+  // --- ANIMATE 3D CAMPERS (SMOOTH INTERPOLATION FOR ALL ACTIONS) ---
   for (const camper of camperMeshes.values()) {
+    // Hide my own head/torso only in strict 'first' POV if camera is very close
+    camper.group.visible = !(camper.id === state.clientId && state.povMode === 'first');
+
     const isWalking = Boolean(camper.walkState && camper.walkState.isWalking);
+    const isPlacingLog = Boolean(camper.placingLogState);
     const isOffering = now < camper.offeringUntil;
     const isReceiving = now < camper.receivingUntil;
     const isNodding = now < camper.nodUntil;
-    const isWaving = now < camper.waveUntil;
 
-    // 1. Walking Movement
-    if (isWalking) {
+    let targetTorsoLean = 0.06;
+    let targetLeftArmX = 0.28;
+    let targetLeftArmY = 0.0;
+    let targetRightArmX = 0.28;
+    let targetRightArmY = 0.0;
+    let targetHeadX = Math.sin(elapsed * 1.1) * 0.035;
+
+    camper.heldLogMesh.visible = false;
+    camper.mallowGroup.visible = false;
+    camper.coffeeGroup.visible = false;
+    camper.sparklerGroup.visible = false;
+
+    // 1. Natural 3D Log Placement Sequence
+    if (isPlacingLog) {
+      const pls = camper.placingLogState;
+      const stepElapsed = (now - pls.startTime) / 1000;
+
+      if (pls.phase === 'walkToFire') {
+        const t = Math.min(1, stepElapsed / 0.75);
+        camper.group.position.x = lerp(pls.startX, pls.targetX, t);
+        camper.group.position.z = lerp(pls.startZ, pls.targetZ, t);
+        camper.group.rotation.y = pls.lookAngle;
+
+        // Stand up & carry log with both hands
+        camper.bodyRoot.position.y = lerp(0, 0.2, t);
+        const swing = Math.sin(elapsed * 11) * 0.35;
+        camper.leftLeg.hipPivot.rotation.set(swing, 0, 0);
+        camper.leftLeg.kneePivot.rotation.set(Math.max(0, -swing * 0.5), 0, 0);
+        camper.rightLeg.hipPivot.rotation.set(-swing, 0, 0);
+        camper.rightLeg.kneePivot.rotation.set(Math.max(0, swing * 0.5), 0, 0);
+
+        camper.heldLogMesh.visible = true;
+        targetTorsoLean = 0.15;
+        targetLeftArmX = -0.55;
+        targetLeftArmY = 0.25;
+        targetRightArmX = -0.55;
+        targetRightArmY = -0.25;
+
+        if (t >= 1) {
+          pls.phase = 'kneelAndPlace';
+          pls.startTime = now;
+        }
+      } else if (pls.phase === 'kneelAndPlace') {
+        const t = Math.min(1, stepElapsed / 0.55);
+        camper.heldLogMesh.visible = t < 0.75;
+        targetTorsoLean = 0.58 * Math.sin(t * Math.PI);
+        targetLeftArmX = -0.85;
+        targetRightArmX = -0.85;
+
+        if (t >= 1) {
+          addPhysicalLogToFire(pls.seatAngle);
+          pls.phase = 'returnToSeat';
+          pls.startTime = now;
+        }
+      } else if (pls.phase === 'returnToSeat') {
+        const t = Math.min(1, stepElapsed / 0.75);
+        camper.group.position.x = lerp(pls.targetX, pls.startX, t);
+        camper.group.position.z = lerp(pls.targetZ, pls.startZ, t);
+        camper.bodyRoot.position.y = lerp(0.2, 0, t);
+
+        const swing = Math.sin(elapsed * 11) * 0.3;
+        camper.leftLeg.hipPivot.rotation.set(swing, 0, 0);
+        camper.rightLeg.hipPivot.rotation.set(-swing, 0, 0);
+
+        if (t >= 1) {
+          camper.group.position.set(pls.startX, 0, pls.startZ);
+          camper.group.rotation.y = pls.lookAngle;
+          camper.placingLogState = null;
+        }
+      }
+    } else if (isWalking) {
+      // 2. Walking to another seat or neighbor
       const ws = camper.walkState;
       const dx = ws.targetX - camper.group.position.x;
       const dz = ws.targetZ - camper.group.position.z;
       const dist = Math.hypot(dx, dz);
-      if (dist > 0.08) {
-        const step = Math.min(dist, 0.065);
+      if (dist > 0.07) {
+        const step = Math.min(dist, 0.058);
         camper.group.position.x += (dx / dist) * step;
         camper.group.position.z += (dz / dist) * step;
         camper.group.rotation.y = Math.atan2(dx, dz);
@@ -1934,121 +1350,135 @@ function animate() {
         ws.isWalking = false;
         if (ws.onArrive) ws.onArrive();
       }
-    }
 
-    // 2. Body Posture & Visible 3D Legs Articulation
-    if (isWalking || isOffering) {
-      // Standing upright
-      camper.bodyRoot.position.set(0, 0.22, 0);
-      camper.bodyRoot.rotation.set(0, 0, 0);
-      const swing = isWalking ? Math.sin(elapsed * 9) * 0.45 : 0;
+      camper.bodyRoot.position.y = lerp(camper.bodyRoot.position.y, 0.2, 0.15);
+      const swing = Math.sin(elapsed * 9.5) * 0.45;
       camper.leftLeg.hipPivot.rotation.set(swing, 0, 0);
       camper.leftLeg.kneePivot.rotation.set(Math.max(0, -swing * 0.6), 0, 0);
       camper.rightLeg.hipPivot.rotation.set(-swing, 0, 0);
       camper.rightLeg.kneePivot.rotation.set(Math.max(0, swing * 0.6), 0, 0);
-    } else if (concept === 'star' && camper.posture === 'lie' && camper.action !== 'stargaze') {
-      // Lying flat on back on the camping mat looking up at the starry sky!
-      camper.bodyRoot.position.set(0, 0.24, -0.58);
-      camper.bodyRoot.rotation.set(-Math.PI / 2 + 0.14, 0, 0);
-      // Legs stretched comfortably along the mat
-      camper.leftLeg.hipPivot.rotation.set(0.08, 0, -0.06);
-      camper.leftLeg.kneePivot.rotation.set(0.12, 0, 0);
-      camper.rightLeg.hipPivot.rotation.set(0.08, 0, 0.06);
-      camper.rightLeg.kneePivot.rotation.set(0.12, 0, 0);
-    } else if (concept === 'water' && camper.posture === 'grass') {
-      // Sitting directly in lakeside grass/reeds with legs stretched forward
-      camper.bodyRoot.position.set(0, -0.18, 0);
-      camper.bodyRoot.rotation.set(-0.08, 0, 0);
-      camper.leftLeg.hipPivot.rotation.set(-Math.PI / 2 + 0.18, 0.12, 0);
-      camper.leftLeg.kneePivot.rotation.set(0.25, 0, 0);
-      camper.rightLeg.hipPivot.rotation.set(-Math.PI / 2 + 0.18, -0.12, 0);
-      camper.rightLeg.kneePivot.rotation.set(0.25, 0, 0);
     } else {
-      // Sitting on Log Bench or Swiss Camping Chair (Thighs horizontal, knees bent 90 deg, boots on ground)
-      const isChair = concept === 'water' && camper.posture === 'chair';
-      camper.bodyRoot.position.set(0, isChair ? 0.06 : 0.0, 0);
-      // Lean forward closer to campfire when warming hands or roasting marshmallow!
-      const leanForward = (concept === 'fire' && (camper.action === 'hands' || camper.action === 'mallow')) ? 0.24 : (isChair ? -0.1 : 0);
-      camper.bodyRoot.rotation.set(leanForward, 0, 0);
-
-      camper.leftLeg.hipPivot.rotation.set(-Math.PI / 2 + 0.08, 0.06, 0);
+      // 3. Seated on the Log Bench (Legs bent naturally at knees, boots resting on ground)
+      camper.bodyRoot.position.y = lerp(camper.bodyRoot.position.y, 0.0, 0.12);
+      camper.leftLeg.hipPivot.rotation.set(-Math.PI / 2 + 0.08, 0.07, 0);
       camper.leftLeg.kneePivot.rotation.set(Math.PI / 2 - 0.1, 0, 0);
-      camper.rightLeg.hipPivot.rotation.set(-Math.PI / 2 + 0.08, -0.06, 0);
+      camper.rightLeg.hipPivot.rotation.set(-Math.PI / 2 + 0.08, -0.07, 0);
       camper.rightLeg.kneePivot.rotation.set(Math.PI / 2 - 0.1, 0, 0);
-    }
 
-    // 3. Arms, Head & Props Animation
-    camper.coffeeGroup.visible = false;
-    camper.mallowGroup.visible = false;
-    camper.sparklerGroup.visible = false;
-    camper.telescopeGroup.visible = false;
-
-    if (isOffering) {
-      // Holding out gift politely with BOTH hands + gentle bow
-      camper.leftArmGroup.rotation.set(-0.45, 0.28, 0);
-      camper.rightArmGroup.rotation.set(-0.45, -0.28, 0);
-      camper.headGroup.rotation.x = 0.22;
-      if (camper.offeringGiftType === 'coffee') {
-        camper.coffeeGroup.visible = true;
-      } else {
+      if (isOffering) {
+        camper.bodyRoot.position.y = 0.2;
+        targetTorsoLean = 0.22;
+        targetLeftArmX = -0.48;
+        targetLeftArmY = 0.26;
+        targetRightArmX = -0.48;
+        targetRightArmY = -0.26;
+        targetHeadX = 0.2;
+        if (camper.offeringGiftType === 'coffee') camper.coffeeGroup.visible = true;
+        else camper.mallowGroup.visible = true;
+      } else if (isReceiving) {
+        targetTorsoLean = 0.2;
+        targetLeftArmX = -0.42;
+        targetLeftArmY = 0.24;
+        targetRightArmX = -0.42;
+        targetRightArmY = -0.24;
+        targetHeadX = Math.sin(elapsed * 6) * 0.18 + 0.18;
+        camper.coffeeGroup.visible = (camper.action === 'coffee');
+        camper.mallowGroup.visible = (camper.action === 'mallow');
+      } else if (camper.action === 'hands') {
+        // Leaning warmly toward the fire, rubbing/warming both hands
+        targetTorsoLean = 0.22 + Math.sin(elapsed * 1.5) * 0.02;
+        const rub = Math.sin(elapsed * 4.2) * 0.065;
+        targetLeftArmX = -0.42 + rub;
+        targetLeftArmY = 0.14;
+        targetRightArmX = -0.42 - rub;
+        targetRightArmY = -0.14;
+        targetHeadX = 0.12;
+      } else if (camper.action === 'mallow') {
         camper.mallowGroup.visible = true;
+        targetTorsoLean = 0.24;
+        targetRightArmX = -0.38 + Math.sin(elapsed * 2.4) * 0.035;
+        targetRightArmY = -0.08;
+        targetLeftArmX = 0.22;
+        targetHeadX = 0.14;
+        const roastRatio = Math.min(1, (now - camper.roastStartTime) / 11000);
+        camper.mallowMesh.material.color.lerpColors(
+          new THREE.Color(0xfffdf9),
+          new THREE.Color(0xd68334),
+          roastRatio
+        );
+      } else if (camper.action === 'coffee') {
+        camper.coffeeGroup.visible = true;
+        const sip = Math.sin(elapsed * 1.25) > 0.72 ? -0.28 : 0.0;
+        targetTorsoLean = 0.08;
+        targetLeftArmX = -0.34 + sip;
+        targetLeftArmY = 0.24;
+        targetRightArmX = -0.34 + sip;
+        targetRightArmY = -0.24;
+        targetHeadX = sip * 0.4 + 0.06;
+      } else if (camper.action === 'sparkler') {
+        camper.sparklerGroup.visible = true;
+        targetTorsoLean = 0.16;
+        targetLeftArmX = -0.35;
+        targetLeftArmY = 0.08;
+        camper.spCore.scale.setScalar(0.8 + Math.random() * 0.65);
+
+        // Emit tiny sparkler sparks
+        if (Math.random() < 0.45) {
+          const worldTip = new THREE.Vector3();
+          camper.spCore.getWorldPosition(worldTip);
+          const sp = new THREE.Mesh(
+            new THREE.SphereGeometry(0.018, 4, 4),
+            new THREE.MeshBasicMaterial({ color: 0xffe885, transparent: true, opacity: 1 })
+          );
+          sp.position.copy(worldTip);
+          scene.add(sp);
+          const vx = (Math.random() - 0.5) * 1.1;
+          const vy = (Math.random() - 0.2) * 1.1;
+          const vz = (Math.random() - 0.5) * 1.1;
+          const born = Date.now();
+          activeEffects.push({
+            update: (d) => {
+              const age = (Date.now() - born) / 380;
+              if (age >= 1) {
+                scene.remove(sp);
+                return false;
+              }
+              sp.position.x += vx * d;
+              sp.position.y += vy * d;
+              sp.position.z += vz * d;
+              sp.material.opacity = 1 - age;
+              return true;
+            }
+          });
+        }
       }
-    } else if (isReceiving) {
-      // Receiving with two hands and bowing warmly
-      camper.leftArmGroup.rotation.set(-0.4, 0.25, 0);
-      camper.rightArmGroup.rotation.set(-0.4, -0.25, 0);
-      camper.headGroup.rotation.x = Math.sin(elapsed * 6) * 0.2 + 0.2;
-      camper.coffeeGroup.visible = (camper.action === 'coffee');
-      camper.mallowGroup.visible = (camper.action === 'mallow');
-    } else if (isWaving) {
-      camper.rightArmGroup.rotation.set(-0.9, 0, Math.sin(elapsed * 12) * 0.45 - 0.4);
-      camper.leftArmGroup.rotation.set(0.2, 0, 0);
-    } else if (camper.action === 'hands' && concept === 'fire') {
-      // Stretch both hands clearly forward toward the campfire flames
-      const rub = Math.sin(elapsed * 4.5) * 0.06;
-      camper.leftArmGroup.rotation.set(-0.35 + rub, 0.15, 0);
-      camper.rightArmGroup.rotation.set(-0.35 - rub, -0.15, 0);
-    } else if (camper.action === 'mallow') {
-      camper.mallowGroup.visible = true;
-      camper.rightArmGroup.rotation.set(-0.32 + Math.sin(elapsed * 2.5) * 0.04, -0.1, 0);
-      camper.leftArmGroup.rotation.set(0.25, 0, 0);
-      // Gradually toast marshmallow to golden brown
-      const roastProgress = Math.min(1, (now - camper.roastStartTime) / 12000);
-      camper.mallowMesh.material.color.lerpColors(new THREE.Color(0xfffdf7), new THREE.Color(0xd98a3c), roastProgress);
-    } else if (camper.action === 'coffee') {
-      camper.coffeeGroup.visible = true;
-      const sip = Math.sin(elapsed * 1.4) > 0.7 ? -0.25 : 0;
-      camper.leftArmGroup.rotation.set(-0.3 + sip, 0.25, 0);
-      camper.rightArmGroup.rotation.set(-0.3 + sip, -0.25, 0);
-    } else if (camper.action === 'sparkler') {
-      camper.sparklerGroup.visible = true;
-      camper.leftArmGroup.rotation.set(-0.3, 0, 0);
-      camper.spTip.scale.setScalar(0.8 + Math.random() * 0.6);
-    } else if (camper.action === 'stargaze' && concept === 'star') {
-      camper.telescopeGroup.visible = true;
-      camper.leftArmGroup.rotation.set(-0.5, 0.2, 0);
-      camper.rightArmGroup.rotation.set(-0.5, -0.2, 0);
-      camper.headGroup.rotation.x = -0.35;
-    } else {
-      // Relaxed breathing idle
-      camper.leftArmGroup.rotation.set(0.32, 0, 0);
-      camper.rightArmGroup.rotation.set(0.32, 0, 0);
-      camper.headGroup.rotation.x = isNodding
-        ? Math.sin(elapsed * 8) * 0.25 + 0.2
-        : (concept === 'star' ? -0.25 : Math.sin(elapsed * 1.2) * 0.04);
     }
 
-    // Floating Name Tag Position
-    const tagPos = camper.group.position.clone();
-    tagPos.y += (concept === 'star' && camper.posture === 'lie' && !isWalking) ? 1.1 : 2.15;
-    projectToScreen(tagPos, camper.labelEl);
-    if (state.zenMode) camper.labelEl.style.opacity = '0';
-    else camper.labelEl.style.opacity = '1';
+    if (isNodding) {
+      targetHeadX = Math.sin(elapsed * 8) * 0.22 + 0.2;
+    }
+
+    // Smoothly blend all joint rotations (Zero robotic snapping!)
+    const b = camper.poseBlend;
+    b.torsoLean = lerp(b.torsoLean, targetTorsoLean, 0.1);
+    b.leftArmX = lerp(b.leftArmX, targetLeftArmX, 0.12);
+    b.leftArmY = lerp(b.leftArmY, targetLeftArmY, 0.12);
+    b.rightArmX = lerp(b.rightArmX, targetRightArmX, 0.12);
+    b.rightArmY = lerp(b.rightArmY, targetRightArmY, 0.12);
+    b.headX = lerp(b.headX, targetHeadX, 0.12);
+
+    // Subtle breathing chest rise
+    const breathScale = 1 + Math.sin(elapsed * 1.8 + camper.seatIndex) * 0.015;
+    camper.torsoPivot.scale.set(breathScale, breathScale, breathScale);
+    camper.torsoPivot.rotation.x = b.torsoLean;
+    camper.leftArm.shoulder.rotation.set(b.leftArmX, b.leftArmY, 0);
+    camper.rightArm.shoulder.rotation.set(b.rightArmX, b.rightArmY, 0);
+    camper.headGroup.rotation.x = b.headX;
   }
 
-  // Update Active Ritual Effects
+  // Update Active Particle Effects
   for (let i = activeEffects.length - 1; i >= 0; i--) {
-    if (!activeEffects[i].update()) {
+    if (!activeEffects[i].update(dt)) {
       activeEffects.splice(i, 1);
     }
   }
@@ -2057,7 +1487,7 @@ function animate() {
 }
 
 // ====================================================
-// 11. POINTER INTERACTION (ORBIT CAMERA, CLICK SEAT, CLICK NEIGHBOR)
+// 11. POINTER & CAMERA CONTROLS
 // ====================================================
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
@@ -2075,8 +1505,8 @@ window.addEventListener('pointermove', (e) => {
   const dy = e.clientY - camControl.lastY;
   if (Math.abs(dx) > 3 || Math.abs(dy) > 3) camControl.dragMoved = true;
 
-  camControl.targetTheta -= dx * 0.0065;
-  camControl.targetPhi = Math.max(0.1, Math.min(1.15, camControl.targetPhi + dy * 0.0055));
+  camControl.orbitOffset -= dx * 0.006;
+  camControl.pitchOffset = Math.max(-0.45, Math.min(0.85, camControl.pitchOffset + dy * 0.004));
   camControl.lastX = e.clientX;
   camControl.lastY = e.clientY;
 });
@@ -2090,7 +1520,7 @@ window.addEventListener('pointerup', (e) => {
   mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
   raycaster.setFromCamera(mouse, camera);
 
-  // 1. Clicked another camper? -> Gently walk over and offer warm coffee or marshmallow!
+  // 1. Clicked another camper? -> Walk over and offer coffee or marshmallow
   const camperHits = raycaster.intersectObjects(camperHitMeshes, false);
   if (camperHits.length > 0) {
     const hitData = camperHits[0].object.userData;
@@ -2098,21 +1528,22 @@ window.addEventListener('pointerup', (e) => {
       const giftType = state.myAction === 'mallow' ? 'mallow' : 'coffee';
       animateWalkAndOfferGift(state.mySeatIndex, hitData.seatIndex, giftType, state.myNickname);
       sendServerAction({ type: 'offerGift', targetSeat: hitData.seatIndex, giftType });
-      showRitualToast(
+      showCenterNotice(
         giftType === 'coffee'
-          ? '☕ 옆 사람에게 다가가 따뜻한 보온병 커피를 두 손으로 건넵니다.'
-          : '🎁 옆 사람에게 다가가 노릇하게 구운 마시멜로를 두 손으로 건넵니다.'
+          ? '옆 사람에게 다가가 따뜻한 커피를 두 손으로 건넵니다.'
+          : '옆 사람에게 다가가 구운 마시멜로를 두 손으로 건넵니다.'
       );
       return;
     }
   }
 
-  // 2. Clicked a Seat (Log, Camping Chair/Grass, or Sleeping Mat)? -> Move seat
+  // 2. Clicked another Log Bench? -> Walk over and sit there
   const seatHits = raycaster.intersectObjects(seatClickMeshes, false);
   if (seatHits.length > 0) {
     const newSeat = seatHits[0].object.userData.seatIndex;
     if (typeof newSeat === 'number' && newSeat !== state.mySeatIndex) {
       state.mySeatIndex = newSeat;
+      camControl.orbitOffset = 0; // Smoothly rotate camera behind new seat!
       const myCamper = camperMeshes.get(state.clientId);
       const targetS = seats[newSeat];
       if (myCamper && targetS) {
@@ -2123,38 +1554,19 @@ window.addEventListener('pointerup', (e) => {
           onArrive: () => {
             myCamper.group.rotation.y = targetS.lookAngle;
             myCamper.walkState = null;
-            sendServerAction({ type: 'moveSeat', seatIndex: newSeat, posture: state.myPosture });
+            sendServerAction({ type: 'moveSeat', seatIndex: newSeat });
           }
         };
       } else {
-        sendServerAction({ type: 'moveSeat', seatIndex: newSeat, posture: state.myPosture });
+        sendServerAction({ type: 'moveSeat', seatIndex: newSeat });
       }
-      showRitualToast('선택한 자리로 천천히 걸어가 앉습니다.');
-      return;
-    }
-  }
-
-  // 3. Clicked Ground? -> Peaceful stroll to that spot
-  const groundHits = raycaster.intersectObject(groundMesh, false);
-  if (groundHits.length > 0) {
-    const pt = groundHits[0].point;
-    const r = Math.hypot(pt.x, pt.z);
-    if (r > 2.2 && r < 14) {
-      const myCamper = camperMeshes.get(state.clientId);
-      if (myCamper) {
-        myCamper.walkState = {
-          targetX: pt.x,
-          targetZ: pt.z,
-          isWalking: true,
-          onArrive: () => {}
-        };
-      }
+      showCenterNotice('선택한 통나무 자리로 걸어가 앉습니다.');
     }
   }
 });
 
 window.addEventListener('wheel', (e) => {
-  camControl.targetRadius = Math.max(7.5, Math.min(24, camControl.targetRadius + e.deltaY * 0.01));
+  camControl.zoomOffset = Math.max(-1.8, Math.min(3.5, camControl.zoomOffset + e.deltaY * 0.004));
 }, { passive: true });
 
 window.addEventListener('resize', () => {
@@ -2164,32 +1576,41 @@ window.addEventListener('resize', () => {
 });
 
 // ====================================================
-// 12. REAL-TIME MULTIPLAYER SSE & SIMULATED COMPANIONS
+// 12. REAL-TIME MULTIPLAYER & HONEST USER COUNT
 // ====================================================
 let sseSource = null;
 
-function getSimulatedCompanions() {
-  const concept = getConceptType();
-  const neighborSeat = (state.mySeatIndex + 1) % MAX_SEATS;
-  const secondSeat = (state.mySeatIndex + 10) % MAX_SEATS;
-  return [
-    {
-      id: 'sim_companion_1',
-      name: concept === 'water' ? '윤슬 닮은 여행자' : (concept === 'star' ? '별빛 헤는 산장지기' : '고요한 솔방울'),
-      seatIndex: neighborSeat,
-      action: concept === 'fire' ? 'hands' : (concept === 'water' ? 'coffee' : 'idle'),
-      posture: concept === 'star' ? 'lie' : (concept === 'water' ? 'chair' : 'sit'),
-      color: '#6b9080'
-    },
-    {
-      id: 'sim_companion_2',
-      name: concept === 'star' ? '은하수 여행자' : '따스한 모닥불',
-      seatIndex: secondSeat,
-      action: concept === 'star' ? 'stargaze' : 'idle',
-      posture: concept === 'star' ? 'sit' : (concept === 'water' ? 'grass' : 'sit'),
-      color: '#e9c46a'
-    }
-  ];
+function rebuildActiveUsersList() {
+  const realList = state.realUsers.length > 0
+    ? state.realUsers
+    : [{
+        id: state.clientId,
+        name: state.myNickname,
+        seatIndex: state.mySeatIndex,
+        action: state.myAction,
+        color: state.myColor
+      }];
+
+  // Online badge ALWAYS displays the exact number of real connected people!
+  document.getElementById('onlineCount').textContent = String(realList.length);
+
+  if (state.enableSoloCompanion && realList.length === 1) {
+    const companionSeat = (state.mySeatIndex + 2) % MAX_SEATS;
+    state.users = [
+      ...realList,
+      {
+        id: 'sim_forest_companion',
+        name: '고요한 산장지기 (AI)',
+        seatIndex: companionSeat,
+        action: 'coffee',
+        color: '#5c8072'
+      }
+    ];
+  } else {
+    state.users = realList;
+  }
+
+  syncCampers3D();
 }
 
 function connectMultiplayerRoom() {
@@ -2199,7 +1620,7 @@ function connectMultiplayerRoom() {
   }
 
   syncUrlParams();
-  applyRoomEnvironment(state.room);
+  applyRoomAtmosphere();
 
   const q = new URLSearchParams({
     room: state.room,
@@ -2229,56 +1650,44 @@ function connectMultiplayerRoom() {
   });
 
   sseSource.onerror = () => {
-    // Fallback offline peaceful companions if server temporarily unreachable
-    state.users = [
-      {
-        id: state.clientId,
-        name: state.myNickname,
-        seatIndex: state.mySeatIndex,
-        action: state.myAction,
-        posture: state.myPosture,
-        color: state.myColor
-      },
-      ...getSimulatedCompanions()
-    ];
-    syncCampers3D();
+    state.realUsers = [{
+      id: state.clientId,
+      name: state.myNickname,
+      seatIndex: state.mySeatIndex,
+      action: state.myAction,
+      color: state.myColor
+    }];
+    rebuildActiveUsersList();
   };
 }
 
 function applyRoomSnapshot(snapshot) {
   if (!snapshot) return;
-  state.fireHeat = snapshot.fireHeat || 680;
-  if (typeof snapshot.waterDayMode === 'boolean' && snapshot.waterDayMode !== state.waterDayMode) {
-    state.waterDayMode = snapshot.waterDayMode;
-    updateSwissLakeDayNightVisuals();
-    renderConceptActionDock();
-  }
+  state.fireHeat = snapshot.fireHeat || 720;
+  document.getElementById('fireTempDisplay').textContent = `${state.fireHeat}°C`;
 
-  const realUsers = snapshot.users || [];
-  const me = realUsers.find((u) => u.id === state.clientId);
+  state.realUsers = snapshot.users || [];
+  const me = state.realUsers.find((u) => u.id === state.clientId);
   if (me) state.mySeatIndex = me.seatIndex;
 
-  // Ensure at least 1 peaceful neighbor is present so user can always experience hand-to-hand coffee/marshmallow sharing
-  if (realUsers.length <= 1) {
-    state.users = [...realUsers, ...getSimulatedCompanions()];
-  } else {
-    state.users = realUsers;
-  }
-
-  document.getElementById('onlineCount').textContent = String(state.users.length);
-  syncCampers3D();
+  rebuildActiveUsersList();
 }
 
 function handleIncomingRoomEffect(eff) {
   if (!eff) return;
   if (eff.effect === 'throwLog') {
-    state.fireHeat = eff.fireHeat || state.fireHeat + 35;
-    if (eff.fromSeat !== state.mySeatIndex) spawnFlyingLogEffect(eff.fromSeat);
-  } else if (eff.effect === 'wave') {
-    for (const c of camperMeshes.values()) {
-      if (c.seatIndex === eff.fromSeat) c.waveUntil = Date.now() + 2500;
+    state.fireHeat = eff.fireHeat || state.fireHeat + 38;
+    document.getElementById('fireTempDisplay').textContent = `${state.fireHeat}°C`;
+    if (eff.fromSeat !== state.mySeatIndex) {
+      triggerNaturalLogPlacement(eff.fromSeat);
+      showCenterNotice(`${eff.actorName}님이 모닥불에 장작을 얹었습니다.`);
     }
-    spawnFloatingHeartOrEmoji(eff.fromSeat, '👋😊');
+  } else if (eff.effect === 'aurora') {
+    state.auroraUntil = Date.now() + 14000;
+    if (eff.fromSeat !== state.mySeatIndex) {
+      soundEngine.playWarmBell();
+      showCenterNotice(`${eff.actorName}님이 오로라 불꽃 가루를 뿌렸습니다.`);
+    }
   } else if (eff.effect === 'offerGift') {
     if (eff.fromSeat !== state.mySeatIndex) {
       animateWalkAndOfferGift(eff.fromSeat, eff.targetSeat, eff.giftType, eff.actorName);
@@ -2286,18 +1695,8 @@ function handleIncomingRoomEffect(eff) {
   } else if (eff.effect === 'acceptGift') {
     if (eff.targetSeat !== state.mySeatIndex) {
       completeGiftAcceptance(eff.fromSeat, eff.targetSeat, eff.giftType);
-      showRitualToast(`🙏 ${eff.actorName}님이 건넨 선물을 두 손으로 받았습니다.`);
+      showCenterNotice(`${eff.actorName}님이 따뜻한 선물을 두 손으로 받았습니다.`);
     }
-  } else if (eff.effect === 'floatLantern') {
-    if (eff.fromSeat !== state.mySeatIndex) spawnWishLanternEffect(eff.fromSeat);
-  } else if (eff.effect === 'skipStone') {
-    if (eff.fromSeat !== state.mySeatIndex) spawnLakeRippleEffect(eff.fromSeat);
-  } else if (eff.effect === 'shootingStar') {
-    if (eff.fromSeat !== state.mySeatIndex) spawnShootingStarEffect();
-  } else if (eff.effect === 'waterDayNight') {
-    state.waterDayMode = eff.waterDayMode;
-    updateSwissLakeDayNightVisuals();
-    renderConceptActionDock();
   }
 }
 
@@ -2316,18 +1715,30 @@ function sendServerAction(payload) {
 }
 
 // ====================================================
-// 13. UI WIRING & MODALS
+// 13. UI CONTROLS & EVENT LISTENERS
 // ====================================================
+function applyRoomAtmosphere() {
+  const isRain = state.room === 'rain-04';
+  document.getElementById('currentRoomName').textContent = isRain ? '우중 캠핑 모닥불' : '소나무 숲 모닥불';
+  document.getElementById('currentRegionTag').textContent = `${state.region.toUpperCase()} · #${state.instance}`;
+
+  document.querySelectorAll('.room-item').forEach((btn) => {
+    btn.classList.toggle('active', btn.dataset.room === state.room);
+  });
+
+  const rainVol = isRain ? 75 : 0;
+  document.getElementById('volRain').value = rainVol;
+  document.getElementById('valRain').textContent = `${rainVol}%`;
+  soundEngine.setVolume('rain', rainVol);
+}
+
 const previewNickname = document.getElementById('previewNickname');
-const myNicknameDisplay = document.getElementById('myNicknameDisplay');
 previewNickname.textContent = state.myNickname;
-myNicknameDisplay.textContent = state.myNickname;
 
 document.getElementById('rerollNameBtn').addEventListener('click', () => {
   state.myNickname = generateRandomNickname();
   localStorage.setItem('bm_nickname', state.myNickname);
   previewNickname.textContent = state.myNickname;
-  myNicknameDisplay.textContent = state.myNickname;
 });
 
 document.getElementById('enterCampBtn').addEventListener('click', () => {
@@ -2337,26 +1748,44 @@ document.getElementById('enterCampBtn').addEventListener('click', () => {
   document.getElementById('bottomDock').classList.remove('hidden');
   state.enteredAt = Date.now();
   connectMultiplayerRoom();
-  showRitualToast('고요한 쉼터에 입장했습니다. 마음이 차분해지는 시간을 보내세요.');
+  showCenterNotice('타닥거리는 모닥불 앞에 앉았습니다.');
 });
 
-// Concept Switching (Top Tabs, Bottom Chips, Room Modal)
-function switchConceptRoom(newRoom) {
-  state.room = normalizeRoomId(newRoom);
-  state.myAction = 'idle';
-  document.getElementById('roomModal').classList.add('hidden');
-  connectMultiplayerRoom();
+// Camera POV Toggle (내 어깨 너머 ↔ 1인칭 불꽃 집중 ↔ 전체 시점)
+const povLabel = document.getElementById('povLabel');
+document.getElementById('cameraPovBtn').addEventListener('click', () => {
+  camControl.orbitOffset = 0;
+  camControl.pitchOffset = 0;
+  camControl.zoomOffset = 0;
+
+  if (state.povMode === 'shoulder') {
+    state.povMode = 'first';
+    povLabel.textContent = '1인칭 불꽃 직관';
+    showCenterNotice('1인칭 시점: 모닥불 바로 앞에서 불꽃에 온전히 집중합니다.');
+  } else if (state.povMode === 'first') {
+    state.povMode = 'wide';
+    povLabel.textContent = '모닥불 전체';
+    showCenterNotice('전체 시점: 모닥불 터 전체를 넓게 바라봅니다.');
+  } else {
+    state.povMode = 'shoulder';
+    povLabel.textContent = '내 어깨 너머';
+    showCenterNotice('내 어깨 너머 시점: 내 캐릭터와 모닥불을 함께 바라봅니다.');
+  }
+});
+
+// Solo AI Companion Toggle
+const soloCompanionToggle = document.getElementById('soloCompanionToggle');
+if (soloCompanionToggle) {
+  soloCompanionToggle.addEventListener('change', (e) => {
+    state.enableSoloCompanion = e.target.checked;
+    rebuildActiveUsersList();
+    showCenterNotice(
+      state.enableSoloCompanion
+        ? '조용한 숲속 동행(AI 캠퍼)이 맞은편 통나무에 함께 앉았습니다.'
+        : '혼자만의 고요한 모닥불 시간으로 전환했습니다.'
+    );
+  });
 }
-
-document.querySelectorAll('.concept-tab').forEach((btn) => {
-  btn.addEventListener('click', () => switchConceptRoom(btn.dataset.room));
-});
-document.querySelectorAll('.mode-chip').forEach((btn) => {
-  btn.addEventListener('click', () => switchConceptRoom(btn.dataset.switchRoom));
-});
-document.querySelectorAll('.room-item').forEach((btn) => {
-  btn.addEventListener('click', () => switchConceptRoom(btn.dataset.room));
-});
 
 document.getElementById('roomSelectBtn').addEventListener('click', () => {
   document.getElementById('roomModal').classList.toggle('hidden');
@@ -2375,7 +1804,14 @@ document.querySelectorAll('.close-panel-btn').forEach((btn) => {
   });
 });
 
-// Region & Instance Selectors
+document.querySelectorAll('.room-item').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    state.room = btn.dataset.room;
+    document.getElementById('roomModal').classList.add('hidden');
+    connectMultiplayerRoom();
+  });
+});
+
 document.querySelectorAll('#regionGroup .mini-pill').forEach((btn) => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('#regionGroup .mini-pill').forEach((b) => b.classList.remove('active'));
@@ -2396,7 +1832,7 @@ document.querySelectorAll('#instanceGroup .mini-pill').forEach((btn) => {
 
 document.getElementById('copyRoomLinkBtn').addEventListener('click', () => {
   navigator.clipboard.writeText(window.location.href).then(() => {
-    showRitualToast('🔗 현재 쉼터 주소가 복사되었습니다. 친구에게 전달해 함께 쉬어보세요.');
+    showCenterNotice('현재 모닥불 주소가 복사되었습니다. 친구에게 공유해 함께 불멍하세요.');
   });
 });
 
@@ -2416,7 +1852,7 @@ document.getElementById('muteAllBtn').addEventListener('click', () => {
   document.getElementById('soundToggleBtn').textContent = muted ? '🔇' : '🔊';
 });
 
-// Worry Burn / Let Go Modal
+// Worry Burn Modal
 const worryInput = document.getElementById('worryInput');
 const worryCount = document.getElementById('worryCount');
 worryInput.addEventListener('input', () => {
@@ -2424,23 +1860,12 @@ worryInput.addEventListener('input', () => {
 });
 
 document.getElementById('burnWorrySubmitBtn').addEventListener('click', () => {
-  const text = worryInput.value.trim();
   worryInput.value = '';
   worryCount.textContent = '0 / 120자';
   document.getElementById('worryModal').classList.add('hidden');
-  soundEngine.playWarmChime();
-
-  const concept = getConceptType();
-  if (concept === 'water') {
-    spawnWishLanternEffect(state.mySeatIndex);
-    showRitualToast(text ? '✨ 적어주신 무거운 마음이 스위스 호수 물결을 따라 멀리 흘러갑니다.' : '✨ 마음속 생각이 잔잔한 물결 속으로 조용히 사라집니다.');
-  } else if (concept === 'star') {
-    spawnShootingStarEffect();
-    showRitualToast('🌠 마음속 생각이 강원도 밤하늘 별빛 속으로 가볍게 흩어집니다.');
-  } else {
-    spawnFlyingLogEffect(state.mySeatIndex);
-    showRitualToast('🔥 무거운 고민이 따뜻한 모닥불 속에서 조용히 타올라 사라집니다.');
-  }
+  triggerNaturalLogPlacement(state.mySeatIndex);
+  soundEngine.playWarmBell();
+  showCenterNotice('적어주신 무거운 고민이 모닥불 불꽃 속에서 조용히 타올라 사라집니다.');
 });
 
 // Zen Mode
@@ -2467,28 +1892,16 @@ setInterval(() => {
   if (el) el.textContent = `${m}:${s}`;
 }, 1000);
 
-// Toast helper
-let toastTimer = null;
-function showRitualToast(msg) {
-  const toast = document.getElementById('ritualToast');
-  const text = document.getElementById('ritualToastText');
-  text.textContent = msg;
-  toast.classList.remove('hidden');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => toast.classList.add('hidden'), 3600);
-}
-
-// Keyboard shortcuts (1~8)
+// Keyboard Shortcuts (1~8)
+const KEY_MAP = ['hands', 'log', 'mallow', 'coffee', 'give', 'sparkler', 'aurora', 'worry'];
 window.addEventListener('keydown', (e) => {
   if (document.activeElement === worryInput) return;
-  const concept = getConceptType();
-  const actions = CONCEPT_DOCK_ACTIONS[concept] || [];
   const idx = Number(e.key) - 1;
-  if (idx >= 0 && idx < actions.length) {
-    triggerConceptAction(actions[idx].id);
+  if (idx >= 0 && idx < KEY_MAP.length) {
+    triggerCampfireAction(KEY_MAP[idx]);
   }
 });
 
-// Initialize 3D Scene & Start Loop
-applyRoomEnvironment(state.room);
+// Start 3D Loop
+rebuildActiveUsersList();
 animate();
