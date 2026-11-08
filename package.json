@@ -1,0 +1,12 @@
+{
+  "name": "bulmeong-sanctuary",
+  "version": "1.0.0",
+  "description": "말없이 함께 둘러앉는 실시간 디지털 불멍 안식처 (산사 스타일 멀티플레이 웹서버)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
