@@ -52,7 +52,11 @@ function getPublicRoomSnapshot(roomState) {
       seatIndex: c.seatIndex,
       action: c.action,
       posture: c.posture || 'sit',
-      color: c.color
+      color: c.color,
+      tentLevel: c.tentLevel || 0,
+      tentColor: c.tentColor || '#d48b45',
+      hasFurniture: Boolean(c.hasFurniture),
+      hasLights: Boolean(c.hasLights)
     });
   }
 
@@ -279,6 +283,19 @@ const server = http.createServer((req, res) => {
             broadcastToRoom(roomState, 'effect', {
               effect: 'changeSeason',
               season: roomState.season,
+              actorName: client.name
+            });
+          } else if (data.type === 'updateTent') {
+            client.tentLevel = Number(data.tentLevel) || 0;
+            client.tentColor = data.tentColor || '#d48b45';
+            client.hasFurniture = Boolean(data.hasFurniture);
+            client.hasLights = Boolean(data.hasLights);
+            broadcastToRoom(roomState, 'sync', getPublicRoomSnapshot(roomState));
+          } else if (data.type === 'huntAnimal') {
+            broadcastToRoom(roomState, 'effect', {
+              effect: 'huntAnimal',
+              fromSeat: client.seatIndex,
+              animalIndex: data.animalIndex,
               actorName: client.name
             });
           } else if (data.type === 'gatherBranch') {

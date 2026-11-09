@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>불멍 | 사계절 숲속 모닥불과 땔감 모으기</title>
-  <meta name="description" content="누구나 터치 한 번으로 쉽게 즐기는 따뜻한 3D 사계절 숲속 모닥불. 나뭇가지 땔감을 주워 모으고 진짜 같은 불꽃을 키워보세요." />
+  <title>불멍 캠핑 | 불 피우기 · 사냥 · 꼬치구이 · 내 텐트 꾸미기</title>
+  <meta name="description" content="나무를 모아 불을 피우고, 숲속 동물을 사냥해 꼬치를 구워 먹으며 코인으로 나만의 텐트를 꾸미는 3D 캠핑" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Pretendard:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -14,103 +14,157 @@
   <!-- Main Interactive WebGL 3D Canvas -->
   <canvas id="campfireCanvas"></canvas>
 
-  <!-- Floating 3D Action Bubble Container (Shows unmistakable big icon + text right above the character & branches!) -->
+  <!-- Floating 3D Action Bubble Container -->
   <div id="actionBubbleContainer" class="action-bubble-container"></div>
 
-  <!-- Warm Golden Firelight Vignette -->
+  <!-- Cozy Night Vignette -->
   <div id="ambientOverlay" class="ambient-overlay"></div>
 
-  <!-- Intro / Entry Modal (Kid-friendly, 1-click entry) -->
+  <!-- Ultra-Simple Entry Modal -->
   <div id="entryOverlay" class="entry-overlay">
     <div class="entry-card">
-      <div class="entry-ember-icon">🔥</div>
-      <h1 class="entry-title">사계절 숲속 불멍</h1>
-      <p class="entry-subtitle">나뭇가지 땔감을 모으고 진짜 같은 모닥불을 키워보세요!</p>
+      <div class="entry-ember-icon">🏕️🔥</div>
+      <h1 class="entry-title">숲속 불멍 캠핑</h1>
+      <p class="entry-subtitle">나무를 모아 불을 피우고, 사냥해서 꼬치를 구워요!</p>
       <div class="entry-rules">
-        <div class="rule-item"><span>🌿</span> <strong>나뭇가지 땔감 모으기 놀이</strong>: 숲속 바닥에 떨어진 나뭇가지를 줍거나 버튼만 누르면 내 옆 장작더미에 차곡차곡 쌓여요!</div>
-        <div class="rule-item"><span>🔥</span> <strong>모은 땔감으로 불꽃 키우기</strong>: 직접 모은 나뭇가지와 장작을 모닥불에 넣으면 불꽃이 활짝 커져요!</div>
-        <div class="rule-item"><span>🌸❄️</span> <strong>봄·여름·가을·겨울 사계절</strong>: 벚꽃 봄, 반딧불이 여름, 단풍 가을, 함박눈 겨울로 배경을 바꿔보세요!</div>
+        <div class="rule-item"><span>🌿</span> <strong>나무 줍기 → 불 피우기</strong>: 나무를 주워 모닥불을 활활 피워요.</div>
+        <div class="rule-item"><span>🏹</span> <strong>사냥 → 꼬치구이 & 코인</strong>: 멧돼지·토끼·꿩을 잡아 바비큐 꼬치를 굽고 코인(🪙)을 모아요!</div>
+        <div class="rule-item"><span>⛺</span> <strong>내 텐트 꾸미기</strong>: 기본 텐트를 멋진 글램핑 텐트로 업그레이드해요!</div>
       </div>
       <div class="entry-identity-preview">
-        <span>내 캐릭터 이름:</span>
+        <span>내 이름:</span>
         <strong id="previewNickname">따스한 모닥불</strong>
-        <button id="rerollNameBtn" class="icon-btn" title="다른 이름 뽑기">🎲</button>
+        <button id="rerollNameBtn" class="icon-btn" title="다른 이름">🎲</button>
       </div>
-      <button id="enterCampBtn" class="enter-btn">🔥 모닥불 켜고 시작하기!</button>
+      <button id="enterCampBtn" class="enter-btn">🔥 캠핑 시작하기</button>
     </div>
   </div>
 
-  <!-- Bright, Intuitive Top Bar -->
+  <!-- Top Bar -->
   <header class="top-bar hidden" id="topBar">
     <div class="top-left">
-      <button id="roomSelectBtn" class="glass-pill room-pill" title="모닥불 채널 바꾸기">
+      <button id="roomSelectBtn" class="glass-pill room-pill">
         <span class="status-dot"></span>
-        <span id="currentRoomName">🍂 가을 단풍 숲</span>
-        <span class="sub-tag" id="currentRegionTag">채널 #0</span>
+        <span id="currentRoomName">🍂 가을숲</span>
+        <span class="sub-tag" id="currentRegionTag">#0</span>
         <span class="chevron">▾</span>
       </button>
 
-      <div class="glass-pill presence-pill" title="현재 함께 모닥불을 보고 있는 사람 수">
+      <div class="glass-pill presence-pill">
         <span>🔥</span>
-        <span>함께 불멍 <strong id="onlineCount">1</strong>명</span>
+        <span><strong id="onlineCount">1</strong>명</span>
       </div>
     </div>
 
-    <!-- 4-Seasons Quick Switcher Pills (봄 / 여름 / 가을 / 겨울) -->
     <div class="top-center">
       <div class="season-tabs" id="seasonTabs">
-        <button class="season-tab" data-season="spring">🌸 봄 벚꽃</button>
-        <button class="season-tab" data-season="summer">🌿 여름 반딧불</button>
-        <button class="season-tab active" data-season="autumn">🍂 가을 단풍</button>
-        <button class="season-tab" data-season="winter">❄️ 겨울 눈숲</button>
+        <button class="season-tab" data-season="spring">🌸 봄</button>
+        <button class="season-tab" data-season="summer">🌿 여름</button>
+        <button class="season-tab active" data-season="autumn">🍂 가을</button>
+        <button class="season-tab" data-season="winter">❄️ 겨울</button>
       </div>
     </div>
 
     <div class="top-right">
-      <button id="seasonCycleMobileBtn" class="glass-pill season-mobile-pill" title="계절 바꾸기 (봄·여름·가을·겨울)">
-        <span id="seasonMobileLabel">🍂 가을 단풍</span>
+      <button id="seasonCycleMobileBtn" class="glass-pill season-mobile-pill">
+        <span id="seasonMobileLabel">🍂 가을</span>
       </button>
-      <button id="cameraPovBtn" class="glass-pill pov-pill" title="카메라 시점 바꾸기">
+      <button id="cameraPovBtn" class="glass-pill pov-pill" title="시점 바꾸기 (옆면·정면·불꽃·전체)">
         <span>📷</span>
-        <strong id="povLabel">내 캐릭터+불꽃</strong>
+        <strong id="povLabel">내 동작 클로즈업</strong>
       </button>
-      <button id="soundToggleBtn" class="glass-icon-btn" title="장작불 소리 조절">
-        🔊
-      </button>
-      <button id="zenModeBtn" class="glass-icon-btn" title="버튼 숨기고 불꽃만 크게 보기">
-        ✨
-      </button>
+      <button id="soundToggleBtn" class="glass-icon-btn">🔊</button>
+      <button id="zenModeBtn" class="glass-icon-btn">✨</button>
     </div>
   </header>
 
-  <!-- Live Action Status Pill -->
+  <!-- Simple Center Toast -->
   <div id="centerNotice" class="center-notice hidden">
-    <span id="centerNoticeText">🔥 모닥불이 따뜻하게 타오릅니다!</span>
+    <span id="centerNoticeText">🌿 나무를 주워 모닥불을 피워보세요!</span>
   </div>
 
-  <!-- Gentle Incoming Gift Offer Banner -->
+  <!-- Gift Offer Banner -->
   <div id="giftOfferBanner" class="gift-offer-banner hidden">
     <div class="gift-offer-text">
-      <span class="gift-offer-icon" id="giftOfferIcon">☕</span>
-      <span id="giftOfferMessage"><strong>다정한 불씨</strong>님이 두 손으로 따뜻한 선물을 건넵니다!</span>
+      <span class="gift-offer-icon" id="giftOfferIcon">🍖</span>
+      <span id="giftOfferMessage"><strong>친구</strong>님이 선물을 건넵니다!</span>
     </div>
     <div class="gift-offer-btns">
       <button id="acceptGiftBtn" class="accept-gift-btn">두 손으로 받기 🙏</button>
-      <button id="declineGiftBtn" class="decline-gift-btn">괜찮아요</button>
+      <button id="declineGiftBtn" class="decline-gift-btn">사양</button>
+    </div>
+  </div>
+
+  <!-- Tent Customization Shop Modal -->
+  <div id="tentModal" class="modal-backdrop hidden">
+    <div class="worry-card tent-shop-card">
+      <div class="panel-header">
+        <h3>⛺ 내 텐트 꾸미기 상점</h3>
+        <button class="close-panel-btn" data-close="tentModal">✕</button>
+      </div>
+      <div class="tent-coin-banner">
+        <span>보유 코인: <strong id="shopCoinDisplay">0</strong> 🪙</span>
+        <small>(🏹 동물 사냥 시 +25🪙 획득!)</small>
+      </div>
+      <div class="tent-shop-list" id="tentShopList">
+        <div class="shop-item">
+          <div class="shop-info">
+            <strong>⛺ 기본 삼각 텐트 (원본)</strong>
+            <span>내 자리 뒤에 설치된 아담한 기본 텐트</span>
+          </div>
+          <button class="shop-buy-btn owned" data-item="base" disabled>기본 보유</button>
+        </div>
+        <div class="shop-item">
+          <div class="shop-info">
+            <strong>🎪 대형 벨 글램핑 텐트</strong>
+            <span>넓고 웅장한 2단 벨 텐트로 업그레이드</span>
+          </div>
+          <button class="shop-buy-btn" id="buyTentLv1Btn" data-cost="30">🪙 30 구매</button>
+        </div>
+        <div class="shop-item">
+          <div class="shop-info">
+            <strong>🏕️ 우드 타프 & 통나무 오두막 텐트</strong>
+            <span>최고급 지붕 타프와 화목 난로 연통 설치</span>
+          </div>
+          <button class="shop-buy-btn" id="buyTentLv2Btn" data-cost="60">🪙 60 구매</button>
+        </div>
+        <div class="shop-item">
+          <div class="shop-info">
+            <strong>🪑 통나무 테이블 & 감성 랜턴 세트</strong>
+            <span>내 텐트 앞에 전용 테이블과 황금 랜턴 배치</span>
+          </div>
+          <button class="shop-buy-btn" id="buyFurnitureBtn" data-cost="25">🪙 25 구매</button>
+        </div>
+        <div class="shop-item">
+          <div class="shop-info">
+            <strong>✨ 텐트 별빛 줄조명 & 깃발 장식</strong>
+            <span>내 텐트 지붕에 반짝이는 알전구 줄조명 설치</span>
+          </div>
+          <button class="shop-buy-btn" id="buyLightsBtn" data-cost="20">🪙 20 구매</button>
+        </div>
+      </div>
+      <div class="tent-color-row">
+        <span>🎨 텐트 색상 변경 (무료):</span>
+        <div class="color-swatches" id="tentColorSwatches">
+          <button class="color-swatch active" data-color="#d48b45" style="background:#d48b45"></button>
+          <button class="color-swatch" data-color="#e05a47" style="background:#e05a47"></button>
+          <button class="color-swatch" data-color="#3b7a57" style="background:#3b7a57"></button>
+          <button class="color-swatch" data-color="#4a6fa5" style="background:#4a6fa5"></button>
+          <button class="color-swatch" data-color="#f2e8cf" style="background:#f2e8cf"></button>
+        </div>
+      </div>
     </div>
   </div>
 
   <!-- Server Channel Selector Modal -->
   <div id="roomModal" class="floating-panel room-panel hidden">
     <div class="panel-header">
-      <h3>🌲 모닥불 채널 & 계절 설정</h3>
+      <h3>🌲 채널 & 계절 설정</h3>
       <button class="close-panel-btn" data-close="roomModal">✕</button>
     </div>
-    <p class="panel-desc">원하는 계절과 채널을 고르거나 친구에게 주소를 보내 같은 모닥불에 앉아보세요.</p>
-
     <div class="server-Selectors">
       <div class="selector-row">
-        <span class="selector-label">계절 테마</span>
+        <span class="selector-label">계절</span>
         <div class="pill-group" id="modalSeasonGroup">
           <button class="mini-pill" data-season="spring">🌸 봄</button>
           <button class="mini-pill" data-season="summer">🌿 여름</button>
@@ -119,15 +173,7 @@
         </div>
       </div>
       <div class="selector-row">
-        <span class="selector-label">서버 지역</span>
-        <div class="pill-group" id="regionGroup">
-          <button class="mini-pill active" data-region="apac">한국/아시아</button>
-          <button class="mini-pill" data-region="us">미주</button>
-          <button class="mini-pill" data-region="eu">유럽</button>
-        </div>
-      </div>
-      <div class="selector-row">
-        <span class="selector-label">채널 번호</span>
+        <span class="selector-label">채널</span>
         <div class="pill-group" id="instanceGroup">
           <button class="mini-pill active" data-instance="0">#0번 방</button>
           <button class="mini-pill" data-instance="1">#1번 방</button>
@@ -137,164 +183,101 @@
       </div>
     </div>
 
-    <div class="room-list" id="roomList">
-      <button class="room-item active" data-room="fire-01">
-        <div class="room-icon">🔥</div>
-        <div class="room-info">
-          <strong>사계절 숲속 모닥불 터</strong>
-          <span>밝고 포근한 랜턴 불빛 아래 나뭇가지를 모아 피우는 메인 모닥불</span>
-        </div>
-        <div class="room-occupancy" data-occ="fire-01">접속 중</div>
-      </button>
-      <button class="room-item" data-room="rain-04">
-        <div class="room-icon">⛺</div>
-        <div class="room-info">
-          <strong>토독토독 빗소리 캠핑 모닥불</strong>
-          <span>빗소리를 들으며 더욱 아늑하게 즐기는 모닥불</span>
-        </div>
-        <div class="room-occupancy" data-occ="rain-04">원활</div>
-      </button>
-    </div>
-
     <div class="companion-toggle-row">
       <label class="companion-label">
         <input type="checkbox" id="soloCompanionToggle" checked />
-        <span>혼자 있을 때 옆자리에 다정한 숲속 친구(AI) 함께 앉히기</span>
+        <span>혼자일 때 옆자리 숲속 친구(AI) 함께 앉히기</span>
       </label>
     </div>
 
     <div class="share-room-footer">
-      <button id="copyRoomLinkBtn" class="secondary-btn">🔗 내 모닥불 방 주소 복사하기 (친구 초대)</button>
+      <button id="copyRoomLinkBtn" class="secondary-btn">🔗 방 주소 복사 (친구 초대)</button>
     </div>
   </div>
 
   <!-- Sound Mixer Panel -->
   <div id="soundModal" class="floating-panel sound-panel hidden">
     <div class="panel-header">
-      <h3>🎧 모닥불 자연의 소리 조절</h3>
+      <h3>🎧 소리 조절</h3>
       <button class="close-panel-btn" data-close="soundModal">✕</button>
     </div>
-    <p class="panel-desc">타닥거리는 장작불 소리와 숲속 소리를 조절해보세요.</p>
     <div class="slider-group">
-      <label>
-        <span>🔥 장작 타닥거리는 소리</span>
-        <span id="valFire">90%</span>
-      </label>
+      <label><span>🔥 장작불 소리</span><span id="valFire">90%</span></label>
       <input type="range" id="volFire" min="0" max="100" value="90" />
     </div>
     <div class="slider-group">
-      <label>
-        <span>🍃 솔숲 바람 소리</span>
-        <span id="valWind">35%</span>
-      </label>
+      <label><span>🍃 밤바람 소리</span><span id="valWind">35%</span></label>
       <input type="range" id="volWind" min="0" max="100" value="35" />
     </div>
     <div class="slider-group">
-      <label>
-        <span>🌧️ 빗방울 소리</span>
-        <span id="valRain">0%</span>
-      </label>
-      <input type="range" id="volRain" min="0" max="100" value="0" />
-    </div>
-    <div class="slider-group">
-      <label>
-        <span>🦗 풀벌레 & 맑은 풍경 소리</span>
-        <span id="valNight">45%</span>
-      </label>
+      <label><span>🦗 풀벌레 소리</span><span id="valNight">45%</span></label>
       <input type="range" id="volNight" min="0" max="100" value="45" />
     </div>
     <div class="sound-footer">
-      <button id="muteAllBtn" class="secondary-btn">🔇 소리 끄기 / 켜기</button>
-    </div>
-  </div>
-
-  <!-- Worry Burn Modal -->
-  <div id="worryModal" class="modal-backdrop hidden">
-    <div class="worry-card">
-      <div class="panel-header">
-        <h3>📜 모닥불에 고민 태워 날리기</h3>
-        <button class="close-panel-btn" data-close="worryModal">✕</button>
-      </div>
-      <p class="worry-desc">
-        속상했던 일이나 잊고 싶은 고민을 적어보세요. 모닥불 불꽃 속으로 날아가 반짝이는 불티가 되어 사라집니다!
-      </p>
-      <textarea id="worryInput" maxlength="100" placeholder="여기에 고민이나 소원을 적어보세요..."></textarea>
-      <div class="worry-footer">
-        <span id="worryCount">0 / 100자</span>
-        <button id="burnWorrySubmitBtn" class="primary-fire-btn">🔥 불꽃 속으로 날리기!</button>
-      </div>
+      <button id="muteAllBtn" class="secondary-btn">🔇 전체 소리 켜기/끄기</button>
     </div>
   </div>
 
   <!-- Zen Mode Exit Button -->
-  <button id="exitZenBtn" class="exit-zen-btn hidden">👆 화면을 눌러 버튼 다시 보기</button>
+  <button id="exitZenBtn" class="exit-zen-btn hidden">👆 화면 터치해 버튼 보기</button>
 
-  <!-- Kid-Friendly, Crystal-Clear Bottom Action Dock -->
+  <!-- Simple, High-Clarity Bottom Dock -->
   <nav class="bottom-dock hidden" id="bottomDock">
     <div class="dock-stats">
-      <div class="stat-chip firewood-bag-chip" id="firewoodBagChip" title="숲속에서 주워 모은 내 땔감 개수">
-        <span class="stat-label">🌿 모은 땔감</span>
-        <strong id="myBranchesDisplay">2개</strong>
+      <div class="stat-chip firewood-bag-chip">
+        <span>🌿 나무</span>
+        <strong id="myBranchesDisplay">1개</strong>
+      </div>
+      <div class="stat-chip meat-bag-chip">
+        <span>🍖 고기</span>
+        <strong id="myMeatDisplay">0개</strong>
+      </div>
+      <div class="stat-chip coin-bag-chip" id="openTentShopChip" style="cursor:pointer">
+        <span>🪙 코인</span>
+        <strong id="myCoinDisplay">20</strong>
       </div>
       <div class="stat-chip fire-power-chip">
-        <span class="stat-label">🔥 불꽃 온도</span>
-        <strong id="fireTempDisplay">750°C</strong>
-      </div>
-      <div class="stat-chip">
-        <span class="stat-label">🪵 넣은 땔감</span>
-        <strong id="logsCountDisplay">0개</strong>
-      </div>
-      <div class="stat-chip">
-        <span class="stat-label">⏱️ 시간</span>
-        <strong id="stayTimer">00:00</strong>
+        <span>🔥 불꽃</span>
+        <strong id="fireTempDisplay">점화 전</strong>
       </div>
     </div>
 
     <div class="dock-actions" id="dockActionsContainer">
       <button class="action-btn gather-btn" data-action="gather">
         <span class="act-icon">🌿</span>
-        <span class="act-label">나뭇가지 줍기</span>
-        <span class="act-sub">땔감 모으기 놀이!</span>
+        <span class="act-label">나무 줍기</span>
       </button>
       <button class="action-btn highlight-btn" data-action="log">
-        <span class="act-icon">🪵</span>
-        <span class="act-label">땔감 불에 넣기</span>
-        <span class="act-sub" id="putLogSubText">불꽃 활짝 키우기!</span>
+        <span class="act-icon">🔥</span>
+        <span class="act-label" id="fireBtnLabel">불 피우기</span>
       </button>
-      <button class="action-btn active-pose" data-action="hands">
+      <button class="action-btn hunt-btn" data-action="hunt">
+        <span class="act-icon">🏹</span>
+        <span class="act-label">동물 사냥</span>
+      </button>
+      <button class="action-btn skewer-btn" data-action="skewer">
+        <span class="act-icon">🍖</span>
+        <span class="act-label">꼬치 굽기</span>
+      </button>
+      <button class="action-btn tent-btn" data-action="tent">
+        <span class="act-icon">⛺</span>
+        <span class="act-label">텐트 꾸미기</span>
+      </button>
+      <button class="action-btn" data-action="hands">
         <span class="act-icon">🤲</span>
         <span class="act-label">손 녹이기</span>
-        <span class="act-sub">따끈따끈 온기</span>
-      </button>
-      <button class="action-btn" data-action="mallow">
-        <span class="act-icon">🍡</span>
-        <span class="act-label">마시멜로 굽기</span>
-        <span class="act-sub">노릇노릇 냠냠</span>
       </button>
       <button class="action-btn" data-action="coffee">
         <span class="act-icon">☕</span>
-        <span class="act-label">보온병 코코아</span>
-        <span class="act-sub">김이 모락모락</span>
+        <span class="act-label">코코아</span>
       </button>
       <button class="action-btn" data-action="give">
         <span class="act-icon">🎁</span>
-        <span class="act-label">친구에게 주기</span>
-        <span class="act-sub">두 손으로 전달</span>
+        <span class="act-label">선물 주기</span>
       </button>
       <button class="action-btn" data-action="sparkler">
         <span class="act-icon">🎇</span>
         <span class="act-label">불꽃놀이</span>
-        <span class="act-sub">반짝반짝 스파클러</span>
-      </button>
-      <button class="action-btn special-btn" data-action="aurora">
-        <span class="act-icon">🌈</span>
-        <span class="act-label">무지개 마법불</span>
-        <span class="act-sub">신비한 오로라불</span>
-      </button>
-      <button class="action-btn" data-action="worry">
-        <span class="act-icon">📜</span>
-        <span class="act-label">고민 태우기</span>
-        <span class="act-sub">훨훨 날려보내기</span>
       </button>
     </div>
   </nav>
