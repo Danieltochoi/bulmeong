@@ -23,6 +23,7 @@ function getOrCreateRoom(room = 'fire-01', instance = 0, region = 'apac') {
       region,
       fireHeat: 680,
       auroraUntil: 0,
+      season: 'autumn', // 'spring' | 'summer' | 'autumn' | 'winter'
       waterDayMode: true, // Swiss Lake default: Daytime emerald lake
       clients: new Map() // clientId -> { id, res, name, seatIndex, action, posture, color }
     });
@@ -66,6 +67,7 @@ function getPublicRoomSnapshot(roomState) {
     region: roomState.region,
     fireHeat: roomState.fireHeat,
     auroraActive: Date.now() < roomState.auroraUntil,
+    season: roomState.season || 'autumn',
     waterDayMode: roomState.waterDayMode,
     roomCount: roomState.clients.size,
     totalOnline: totalOnlineAllRooms,
@@ -270,6 +272,20 @@ const server = http.createServer((req, res) => {
             broadcastToRoom(roomState, 'effect', {
               effect: 'skipStone',
               fromSeat: client.seatIndex,
+              actorName: client.name
+            });
+          } else if (data.type === 'changeSeason' && data.season) {
+            roomState.season = data.season;
+            broadcastToRoom(roomState, 'effect', {
+              effect: 'changeSeason',
+              season: roomState.season,
+              actorName: client.name
+            });
+          } else if (data.type === 'gatherBranch') {
+            broadcastToRoom(roomState, 'effect', {
+              effect: 'gatherBranch',
+              fromSeat: client.seatIndex,
+              branchIndex: data.branchIndex,
               actorName: client.name
             });
           } else if (data.type === 'shootingStar') {

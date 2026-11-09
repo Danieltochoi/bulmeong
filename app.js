@@ -1,21 +1,18 @@
 /**
- * 🔥 불멍 (BULMEONG) — Photorealistic Procedural 3D Fire & Kid-Friendly Intuitive Actions
+ * 🔥 불멍 (BULMEONG) — Photorealistic 3D Fire, 4-Season Forest & Firewood Gathering Game!
  *
- * 1. Photorealistic GLSL FBM Volumetric Fire Shader (3D simplex/value noise + blackbody radiation color gradient:
- *    white-hot 3200K core -> golden yellow 2200K -> blazing orange 1500K -> deep crimson wisps + rising smoke & 120 glowing embers)
- * 2. Bright, Warm Golden-Hour Forest Campsite (Festival string lights, glowing camp lanterns, warm twilight sky — never too dark!)
- * 3. Unmistakable, Kid-Friendly 3D Actions with Floating Status Bubbles right above the character:
- *    - 🪵 장작 넣기: Carries big log in both hands, walks to fire, tosses it in -> huge spark burst & flames roar higher!
- *    - 🤲 손 녹이기: Stretches big warm hands right near the fire with visible warm heat rings & "🤲 손이 따끈따끈해요!"
- *    - 🍡 마시멜로 굽기: Holds giant marshmallow right over the fire with live roasting gauge (0% -> 100% golden brown) + "냠냠!" eating animation!
- *    - ☕ 보온병 코코아: Pours steaming hot cocoa from green thermos into a big mug with rising 3D steam puffs & sipping animation!
- *    - 🎁 친구에게 주기: Walks over to neighbor and hands over cocoa/marshmallow with two hands & polite bow!
- *    - 🎇 불꽃놀이: Holds dazzling golden sparkler shooting 3D star sparks in all directions!
- *    - 🌈 무지개 마법불: Sprinkles magic powder that turns the realistic fire into emerald/violet aurora flames!
+ * 1. Photorealistic GLSL FBM Volumetric Fire Shader (4-octave noise + Kelvin blackbody radiation + 120 embers)
+ * 2. 🌿 Firewood Branch Gathering Game (나뭇가지 줍기 & 땔감 모으기 놀이):
+ *    - 3D forked tree branches & pinecones spawn around the forest floor with a gentle golden sparkle
+ *    - Click any branch on the ground OR press "🌿 나뭇가지 줍기" -> Character walks over, bends down, picks it up,
+ *      and stacks it neatly beside their log seat!
+ *    - Press "🪵 땔감 불에 넣기" to carry your gathered branches to the campfire and watch the flames roar higher!
+ * 3. 🌸🌿🍂❄️ 4-Seasons Forest Background Switcher (봄 벚꽃 / 여름 반딧불 / 가을 단풍 / 겨울 눈숲):
+ *    - Instant 3D transformation of sky, ground, tree foliage, and 180 seasonal falling/floating particles!
  */
 
 // ====================================================
-// 1. IDENTITY & STATE
+// 1. IDENTITY, SEASON CONFIG & STATE
 // ====================================================
 const ADJECTIVES = [
   '따스한', '포근한', '다정한', '반짝이는', '해맑은',
@@ -32,6 +29,73 @@ const CAMPER_COLORS = [
   '#f28482', '#fb8500', '#8ac926', '#9b5de5'
 ];
 
+const SEASONS = {
+  spring: {
+    id: 'spring',
+    label: '🌸 봄 벚꽃 숲',
+    shortLabel: '🌸 봄 벚꽃',
+    skyHex: 0x261d3a,
+    fogHex: 0x261d3a,
+    hemiSky: 0xffc8dd,
+    hemiGround: 0x4a5d32,
+    groundHex: 0x354828,
+    sandHex: 0x5c4738,
+    treeColors: [0xffb3c6, 0xffc2d1, 0xff8fab, 0x527946], // Cherry blossom pinks + fresh spring green
+    particleColor: 0xffccd5,
+    particleSize: 0.08,
+    particleType: 'petals',
+    toast: '🌸 따뜻한 봄바람에 분홍빛 벚꽃잎이 흩날리는 봄 숲이에요!'
+  },
+  summer: {
+    id: 'summer',
+    label: '🌿 여름 반딧불 숲',
+    shortLabel: '🌿 여름 반딧불',
+    skyHex: 0x112233,
+    fogHex: 0x112233,
+    hemiSky: 0x6495ed,
+    hemiGround: 0x243b24,
+    groundHex: 0x233d20,
+    sandHex: 0x4a3928,
+    treeColors: [0x1b4332, 0x2d6a4f, 0x40916c], // Lush deep summer greens
+    particleColor: 0xccff33,
+    particleSize: 0.09,
+    particleType: 'fireflies',
+    toast: '🌿 반짝반짝 형광빛 반딧불이가 날아다니는 싱그러운 여름밤 숲이에요!'
+  },
+  autumn: {
+    id: 'autumn',
+    label: '🍂 가을 단풍 숲',
+    shortLabel: '🍂 가을 단풍',
+    skyHex: 0x1e182b,
+    fogHex: 0x1e182b,
+    hemiSky: 0xffb570,
+    hemiGround: 0x523620,
+    groundHex: 0x3d291a,
+    sandHex: 0x543b28,
+    treeColors: [0xd94e1f, 0xe68a1e, 0xc4301c, 0x8c5828], // Crimson maple & golden ginkgo
+    particleColor: 0xff8c24,
+    particleSize: 0.09,
+    particleType: 'leaves',
+    toast: '🍂 울긋불긋 단풍잎과 은행잎이 떨어지는 포근한 가을 캠핑장이에요!'
+  },
+  winter: {
+    id: 'winter',
+    label: '❄️ 겨울 눈꽃 숲',
+    shortLabel: '❄️ 겨울 눈숲',
+    skyHex: 0x152238,
+    fogHex: 0x152238,
+    hemiSky: 0xd0e8ff,
+    hemiGround: 0x6c7a89,
+    groundHex: 0xdbe4ee, // Snowy white ground!
+    sandHex: 0x8d99ae,
+    treeColors: [0xeef4f8, 0xcfe0ec, 0x2b4538], // Snow-covered pines!
+    particleColor: 0xffffff,
+    particleSize: 0.075,
+    particleType: 'snow',
+    toast: '❄️ 하얀 함박눈이 소복이 쌓이는 겨울 눈꽃 숲속 모닥불이에요!'
+  }
+};
+
 function generateRandomNickname() {
   const adj = ADJECTIVES[Math.floor(Math.random() * ADJECTIVES.length)];
   const noun = NOUNS[Math.floor(Math.random() * NOUNS.length)];
@@ -46,10 +110,12 @@ const state = {
   room: urlParams.get('room') === 'rain-04' ? 'rain-04' : 'fire-01',
   instance: Number(urlParams.get('instance') || 0),
   region: urlParams.get('region') || 'apac',
+  season: 'autumn', // 'spring' | 'summer' | 'autumn' | 'winter'
   mySeatIndex: 0,
   myAction: 'hands', // 'hands' | 'mallow' | 'coffee' | 'sparkler'
-  povMode: 'shoulder', // 'shoulder' (내 캐릭터+불꽃) | 'first' (진짜 불꽃 클로즈업) | 'wide' (캠핑장 전체)
-  enableSoloCompanion: true, // Kid-friendly default: friendly forest companion sits nearby so sharing always works immediately!
+  myBranches: 2, // Start with 2 branches in your personal woodpile!
+  povMode: 'shoulder', // 'shoulder' | 'first' | 'wide'
+  enableSoloCompanion: true,
   fireHeat: 750,
   logsAddedCount: 0,
   auroraUntil: 0,
@@ -175,7 +241,6 @@ class CampfireAudioEngine {
     if (!this.ctx || this.isMuted) return;
     const now = this.ctx.currentTime;
 
-    // Crisp Oak Firewood Pop & Snap
     if (this.volumes.fire > 0.02 && Math.random() < 0.42) {
       const osc = this.ctx.createOscillator();
       const gain = this.ctx.createGain();
@@ -194,6 +259,22 @@ class CampfireAudioEngine {
       osc.start(now);
       osc.stop(now + 0.048);
     }
+  }
+
+  playPickupPop() {
+    if (!this.ctx || this.isMuted) return;
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(380, now);
+    osc.frequency.exponentialRampToValueAtTime(760, now + 0.11);
+    gain.gain.setValueAtTime(0.08, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.13);
+    osc.connect(gain);
+    gain.connect(this.masterGain);
+    osc.start(now);
+    osc.stop(now + 0.14);
   }
 
   playWoodRoar() {
@@ -252,7 +333,7 @@ class CampfireAudioEngine {
 const soundEngine = new CampfireAudioEngine();
 
 // ====================================================
-// 4. THREE.JS BRIGHT & COZY CAMPSITE + PHOTOREALISTIC FIRE
+// 4. THREE.JS 4-SEASONS CAMPSITE + PHOTOREALISTIC FIRE
 // ====================================================
 const canvas = document.getElementById('campfireCanvas');
 const bubbleContainer = document.getElementById('actionBubbleContainer');
@@ -263,12 +344,11 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.38; // Bright, vibrant, warm exposure!
+renderer.toneMappingExposure = 1.38;
 
 const scene = new THREE.Scene();
-// Warm Twilight Indigo-Amber Sky (Never pitch-black!)
-scene.background = new THREE.Color(0x1b192e);
-scene.fog = new THREE.FogExp2(0x1b192e, 0.014);
+scene.background = new THREE.Color(0x1e182b);
+scene.fog = new THREE.FogExp2(0x1e182b, 0.013);
 
 const camera = new THREE.PerspectiveCamera(42, window.innerWidth / window.innerHeight, 0.1, 160);
 
@@ -285,16 +365,13 @@ const camControl = {
 };
 
 // --- BRIGHT, COZY CAMPSITE LIGHTING ---
-// 1. Warm Sky + Earth Hemisphere Light
-const hemiLight = new THREE.HemisphereLight(0x6b78b4, 0x4d3522, 1.15);
+const hemiLight = new THREE.HemisphereLight(0xffb570, 0x523620, 1.15);
 scene.add(hemiLight);
 
-// 2. Warm Sunset/Moon Rim Light so characters & trees are always clearly visible
-const rimLight = new THREE.DirectionalLight(0xffdcb8, 0.75);
+const rimLight = new THREE.DirectionalLight(0xffdcb8, 0.78);
 rimLight.position.set(12, 22, 14);
 scene.add(rimLight);
 
-// 3. Intense Real-Time Fire Point Light
 const fireLight = new THREE.PointLight(0xff8024, 5.2, 34, 1.25);
 fireLight.position.set(0, 1.65, 0);
 fireLight.castShadow = true;
@@ -303,29 +380,25 @@ fireLight.shadow.mapSize.height = 1024;
 fireLight.shadow.bias = -0.001;
 scene.add(fireLight);
 
-// 4. Secondary Low Ember Bounce Light (illuminates faces, hands, and boots warmly)
 const bounceLight = new THREE.PointLight(0xffaa44, 2.6, 16, 1.4);
 bounceLight.position.set(0, 0.55, 0);
 scene.add(bounceLight);
 
-// Warm Forest Ground with Golden Firelight Reflection Ring
-const groundMat = new THREE.MeshStandardMaterial({ color: 0x33271e, roughness: 0.88, metalness: 0.04 });
+// Ground & Hearth Sand
+const groundMat = new THREE.MeshStandardMaterial({ color: 0x3d291a, roughness: 0.88, metalness: 0.04 });
 const groundMesh = new THREE.Mesh(new THREE.CircleGeometry(65, 64), groundMat);
 groundMesh.rotation.x = -Math.PI / 2;
 groundMesh.receiveShadow = true;
 scene.add(groundMesh);
 
-// Warm Sandy Hearth Circle around the fire
-const hearthSandMesh = new THREE.Mesh(
-  new THREE.CircleGeometry(5.5, 48),
-  new THREE.MeshStandardMaterial({ color: 0x4a3626, roughness: 0.9 })
-);
+const hearthSandMat = new THREE.MeshStandardMaterial({ color: 0x543b28, roughness: 0.9 });
+const hearthSandMesh = new THREE.Mesh(new THREE.CircleGeometry(5.5, 48), hearthSandMat);
 hearthSandMesh.rotation.x = -Math.PI / 2;
 hearthSandMesh.position.y = 0.01;
 hearthSandMesh.receiveShadow = true;
 scene.add(hearthSandMesh);
 
-// Cozy Camping String Lights / Warm Lantern Poles around the clearing
+// Cozy String Light Lantern Poles
 const lanternGroup = new THREE.Group();
 scene.add(lanternGroup);
 const poleMat = new THREE.MeshStandardMaterial({ color: 0x4a3220, roughness: 0.85 });
@@ -363,12 +436,110 @@ const starsMat = new THREE.PointsMaterial({ color: 0xfff0d8, size: 0.42, transpa
 scene.add(new THREE.Points(starsGeo, starsMat));
 
 // ====================================================
-// 4A. PHOTOREALISTIC PROCEDURAL FBM SHADER FIRE ENGINE
+// 4A. 4-SEASONS TREES & SEASONAL FALLING PARTICLES (벚꽃 / 반딧불 / 단풍 / 눈)
+// ====================================================
+const trunkMat = new THREE.MeshStandardMaterial({ color: 0x422a1b, roughness: 0.9 });
+const treeFoliageMeshes = [];
+
+for (let i = 0; i < 38; i++) {
+  const tree = new THREE.Group();
+  const a = (i / 38) * Math.PI * 2 + (Math.random() - 0.5) * 0.06;
+  const dist = 14.5 + Math.random() * 14;
+  const s = 0.95 + Math.random() * 0.7;
+  const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.2 * s, 0.32 * s, 2.2 * s, 7), trunkMat);
+  trunk.position.y = 1.1 * s;
+  tree.add(trunk);
+
+  const leafMat = new THREE.MeshStandardMaterial({ color: 0xd94e1f, roughness: 0.82 });
+  for (let l = 0; l < 3; l++) {
+    const cone = new THREE.Mesh(new THREE.ConeGeometry((1.8 - l * 0.4) * s, (2.6 - l * 0.3) * s, 7), leafMat);
+    cone.position.y = (2.3 + l * 1.35) * s;
+    tree.add(cone);
+  }
+  treeFoliageMeshes.push({ mat: leafMat, index: i });
+  tree.position.set(Math.cos(a) * dist, 0, Math.sin(a) * dist);
+  scene.add(tree);
+}
+
+// 180 Seasonal Atmosphere Particles (Cherry Blossoms, Fireflies, Maple Leaves, Snowflakes)
+const SEASON_PARTICLE_COUNT = 180;
+const seasonParticles = [];
+const seasonParticleGroup = new THREE.Group();
+scene.add(seasonParticleGroup);
+
+for (let i = 0; i < SEASON_PARTICLE_COUNT; i++) {
+  const mat = new THREE.MeshBasicMaterial({
+    color: 0xff8c24,
+    side: THREE.DoubleSide,
+    transparent: true,
+    opacity: 0.88
+  });
+  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(0.14, 0.14), mat);
+  resetSeasonParticle(mesh, true);
+  seasonParticleGroup.add(mesh);
+  seasonParticles.push(mesh);
+}
+
+function resetSeasonParticle(p, randomY = false) {
+  const angle = Math.random() * Math.PI * 2;
+  const radius = 1.8 + Math.random() * 13.5;
+  p.position.set(
+    Math.cos(angle) * radius,
+    randomY ? 0.5 + Math.random() * 8.5 : 8.0 + Math.random() * 2.0,
+    Math.sin(angle) * radius
+  );
+  p.userData = {
+    vy: -(0.45 + Math.random() * 0.65),
+    vx: (Math.random() - 0.5) * 0.4,
+    vz: (Math.random() - 0.5) * 0.4,
+    rotSpeed: 1.5 + Math.random() * 3.0,
+    phase: Math.random() * Math.PI * 2
+  };
+}
+
+function applySeasonTheme(seasonKey, showNotice = false) {
+  const cfg = SEASONS[seasonKey] || SEASONS.autumn;
+  state.season = cfg.id;
+
+  scene.background.setHex(cfg.skyHex);
+  scene.fog.color.setHex(cfg.fogHex);
+  hemiLight.color.setHex(cfg.hemiSky);
+  hemiLight.groundColor.setHex(cfg.hemiGround);
+  groundMat.color.setHex(cfg.groundHex);
+  hearthSandMat.color.setHex(cfg.sandHex);
+
+  treeFoliageMeshes.forEach((item) => {
+    const cHex = cfg.treeColors[item.index % cfg.treeColors.length];
+    item.mat.color.setHex(cHex);
+  });
+
+  seasonParticles.forEach((p) => {
+    p.material.color.setHex(cfg.particleColor);
+  });
+
+  // Update Top & Modal Season Buttons
+  document.getElementById('currentRoomName').textContent = cfg.label;
+  const mobileLbl = document.getElementById('seasonMobileLabel');
+  if (mobileLbl) mobileLbl.textContent = cfg.shortLabel;
+
+  document.querySelectorAll('.season-tab').forEach((btn) => {
+    btn.classList.toggle('active', btn.dataset.season === cfg.id);
+  });
+  document.querySelectorAll('#modalSeasonGroup .mini-pill').forEach((btn) => {
+    btn.classList.toggle('active', btn.dataset.season === cfg.id);
+  });
+
+  if (showNotice) {
+    showCenterNotice(cfg.toast);
+  }
+}
+
+// ====================================================
+// 4B. PHOTOREALISTIC PROCEDURAL FBM SHADER FIRE ENGINE
 // ====================================================
 const hearthGroup = new THREE.Group();
 scene.add(hearthGroup);
 
-// Stone Ring
 const stoneMat = new THREE.MeshStandardMaterial({ color: 0x5c524b, roughness: 0.85 });
 for (let i = 0; i < 18; i++) {
   const a = (i / 18) * Math.PI * 2;
@@ -381,7 +552,6 @@ for (let i = 0; i < 18; i++) {
   hearthGroup.add(stone);
 }
 
-// Incandescent White-Orange Glowing Coal Bed
 const coalBedMat = new THREE.MeshStandardMaterial({
   color: 0xff4500,
   emissive: 0xff5500,
@@ -392,7 +562,6 @@ const coalBed = new THREE.Mesh(new THREE.CylinderGeometry(1.42, 1.55, 0.22, 32),
 coalBed.position.y = 0.1;
 hearthGroup.add(coalBed);
 
-//Glowing Chunks of Burning Charcoal
 const coalChunkMat = new THREE.MeshBasicMaterial({ color: 0xffaa33 });
 for (let i = 0; i < 24; i++) {
   const chunk = new THREE.Mesh(new THREE.DodecahedronGeometry(0.11 + Math.random() * 0.08, 0), coalChunkMat);
@@ -402,7 +571,6 @@ for (let i = 0; i < 24; i++) {
   hearthGroup.add(chunk);
 }
 
-// Base Oak Firewood Logs with Incandescent Burning Undersides
 const barkMat = new THREE.MeshStandardMaterial({
   color: 0x4f2f1a,
   roughness: 0.88,
@@ -421,6 +589,28 @@ function createFirewoodLogMesh(length = 2.2, radius = 0.15) {
   return logGroup;
 }
 
+// Create a forked tree branch mesh (나뭇가지 땔감 모델)
+const branchWoodMat = new THREE.MeshStandardMaterial({ color: 0x6b4423, roughness: 0.88 });
+function createTreeBranchBundleMesh() {
+  const bGroup = new THREE.Group();
+  const mainStick = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.055, 0.95, 8), branchWoodMat);
+  mainStick.rotation.z = Math.PI / 2;
+  mainStick.castShadow = true;
+  bGroup.add(mainStick);
+
+  const twig1 = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.03, 0.42, 6), branchWoodMat);
+  twig1.position.set(0.12, 0.08, 0.08);
+  twig1.rotation.set(0.4, 0.2, Math.PI / 3);
+  bGroup.add(twig1);
+
+  const twig2 = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.028, 0.36, 6), branchWoodMat);
+  twig2.position.set(-0.15, 0.06, -0.08);
+  twig2.rotation.set(-0.35, -0.2, -Math.PI / 3);
+  bGroup.add(twig2);
+
+  return bGroup;
+}
+
 for (let i = 0; i < 8; i++) {
   const a = (i / 8) * Math.PI * 2;
   const log = createFirewoodLogMesh(2.25, 0.15);
@@ -430,8 +620,6 @@ for (let i = 0; i < 8; i++) {
   hearthGroup.add(log);
 }
 
-// --- HIGH-TECH GLSL PROCEDURAL FBM VOLUMETRIC FIRE SHADER ---
-// Uses multi-octave procedural noise + cellular flame tongues + Kelvin blackbody radiation curve
 const realisticFireVertexShader = `
   uniform float uTime;
   uniform float uSeed;
@@ -444,7 +632,6 @@ const realisticFireVertexShader = `
     vec3 pos = position;
     float h = clamp(uv.y, 0.0, 1.0);
 
-    // Organic rising convection wave
     float waveX = sin(uTime * 4.5 + h * 5.2 + uSeed) * 0.22 * pow(h, 1.4);
     float waveZ = cos(uTime * 3.9 + h * 4.8 + uSeed * 1.9) * 0.22 * pow(h, 1.4);
     pos.x += waveX;
@@ -463,7 +650,6 @@ const realisticFireFragmentShader = `
   varying vec2 vUv;
   varying vec3 vLocalPos;
 
-  // High-speed 2D Procedural Hash & Value Noise for Real Flame Turbulence
   float hash(vec2 p) {
     p = fract(p * vec2(123.34, 456.21));
     p += dot(p, p + 45.32);
@@ -481,7 +667,6 @@ const realisticFireFragmentShader = `
     return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
   }
 
-  // 4-Octave Fractal Brownian Motion (FBM) for Realistic Licking Flame Tongues
   float fbm(vec2 p) {
     float v = 0.0;
     float amp = 0.5;
@@ -497,22 +682,18 @@ const realisticFireFragmentShader = `
     float h = clamp(vUv.y, 0.0, 1.0);
     float radialDist = abs(vUv.x - 0.5) * 2.0;
 
-    // Advect UV upward rapidly to simulate rising hot gas
     vec2 flowUv = vec2(vUv.x * 3.8 + uSeed, vUv.y * 3.2 - uTime * 3.1);
     float n1 = fbm(flowUv);
     float n2 = fbm(flowUv * 1.9 - vec2(0.0, uTime * 2.2));
     float flameNoise = mix(n1, n2, 0.5);
 
-    // Shape mask: wide at base, tapering & breaking into individual flame tongues at top
     float taper = mix(0.95, 0.05, pow(h, 0.85));
     float intensity = (1.0 - smoothstep(taper * 0.3, taper, radialDist * 0.65)) * (1.15 - h * 0.92);
     intensity += (flameNoise - 0.45) * 0.85 * (1.0 - h * 0.3);
     intensity = clamp(intensity, 0.0, 1.0);
 
-    // Discard cold outer pixels so flame edges look crisp & organic
     if (intensity < 0.08) discard;
 
-    // Blackbody Radiation Color Curve (Real Fire Physics)
     vec3 col;
     if (uAurora > 0.5) {
       vec3 deepViolet = vec3(0.32, 0.05, 0.75);
@@ -570,7 +751,6 @@ for (let i = 0; i < NUM_FIRE_VOLUMES; i++) {
   fireShaderPlanes.push(mesh);
 }
 
-// Bright Inner Core Glow Sphere (Gives intense incandescent heart to the fire)
 const coreGlowMat = new THREE.MeshBasicMaterial({
   color: 0xffaa33,
   transparent: true,
@@ -582,7 +762,6 @@ const coreGlowSphere = new THREE.Mesh(new THREE.SphereGeometry(0.95, 16, 16), co
 coreGlowSphere.position.set(0, 0.65, 0);
 hearthGroup.add(coreGlowSphere);
 
-// 120 Rising Glowing Embers / Sparks
 const EMBER_COUNT = 120;
 const emberMeshes = [];
 const emberMatBase = new THREE.MeshBasicMaterial({
@@ -612,28 +791,58 @@ function resetEmberParticle(sp, randomY = false) {
   };
 }
 
-// Pine Trees surrounding the campsite (Warmly lit, outside radius 15)
-const trunkMat = new THREE.MeshStandardMaterial({ color: 0x422a1b, roughness: 0.9 });
-const pineLeafMat = new THREE.MeshStandardMaterial({ color: 0x213d2e, roughness: 0.82 });
-for (let i = 0; i < 38; i++) {
-  const tree = new THREE.Group();
-  const a = (i / 38) * Math.PI * 2 + (Math.random() - 0.5) * 0.06;
-  const dist = 15.2 + Math.random() * 14;
-  const s = 0.95 + Math.random() * 0.7;
-  const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.2 * s, 0.32 * s, 2.2 * s, 7), trunkMat);
-  trunk.position.y = 1.1 * s;
-  tree.add(trunk);
-  for (let l = 0; l < 3; l++) {
-    const cone = new THREE.Mesh(new THREE.ConeGeometry((1.8 - l * 0.4) * s, (2.6 - l * 0.3) * s, 7), pineLeafMat);
-    cone.position.y = (2.3 + l * 1.35) * s;
-    tree.add(cone);
-  }
-  tree.position.set(Math.cos(a) * dist, 0, Math.sin(a) * dist);
-  scene.add(tree);
+// ====================================================
+// 4C. FORAGEABLE 3D TREE BRANCHES ON THE FOREST FLOOR (나뭇가지 줍기 놀이!)
+// ====================================================
+const MAX_FORAGE_BRANCHES = 10;
+const forageBranches = [];
+const forageBranchHitMeshes = [];
+
+for (let i = 0; i < MAX_FORAGE_BRANCHES; i++) {
+  const itemGroup = new THREE.Group();
+  const branchMesh = createTreeBranchBundleMesh();
+  branchMesh.position.y = 0.08;
+  itemGroup.add(branchMesh);
+
+  // Subtle golden sparkle ring underneath so kids can easily spot branches on the ground!
+  const ring = new THREE.Mesh(
+    new THREE.RingGeometry(0.32, 0.42, 20),
+    new THREE.MeshBasicMaterial({ color: 0xffe066, side: THREE.DoubleSide, transparent: true, opacity: 0.55 })
+  );
+  ring.rotation.x = -Math.PI / 2;
+  ring.position.y = 0.02;
+  itemGroup.add(ring);
+
+  const hitBox = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.65, 0.65, 0.8, 8),
+    new THREE.MeshBasicMaterial({ visible: false })
+  );
+  hitBox.position.y = 0.35;
+  hitBox.userData = { branchIndex: i };
+  itemGroup.add(hitBox);
+  forageBranchHitMeshes.push(hitBox);
+
+  const angle = (i / MAX_FORAGE_BRANCHES) * Math.PI * 2 + 0.3;
+  const dist = 5.4 + (i % 3) * 1.35;
+  const bx = Math.cos(angle) * dist;
+  const bz = Math.sin(angle) * dist;
+  itemGroup.position.set(bx, 0, bz);
+  itemGroup.rotation.y = Math.random() * Math.PI * 2;
+  scene.add(itemGroup);
+
+  forageBranches.push({
+    index: i,
+    group: itemGroup,
+    ring,
+    hitBox,
+    x: bx,
+    z: bz,
+    available: true
+  });
 }
 
 // ====================================================
-// 5. LOG SEATS AROUND THE CAMPFIRE
+// 5. LOG SEATS & PERSONAL FIREWOOD PILE BESIDE EACH SEAT
 // ====================================================
 const MAX_SEATS = 12;
 const SEAT_RADIUS = 3.5;
@@ -669,6 +878,11 @@ for (let i = 0; i < MAX_SEATS; i++) {
   capR.position.set(0.751, 0.35, 0);
   seatGroup.add(capL, capR);
 
+  // Personal Gathered Firewood Pile right beside the log bench!
+  const woodPileGroup = new THREE.Group();
+  woodPileGroup.position.set(1.05, 0, 0.15);
+  seatGroup.add(woodPileGroup);
+
   const hitMesh = new THREE.Mesh(
     new THREE.BoxGeometry(1.55, 0.9, 1.1),
     new THREE.MeshBasicMaterial({ visible: false })
@@ -678,7 +892,32 @@ for (let i = 0; i < MAX_SEATS; i++) {
   seatGroup.add(hitMesh);
   seatClickMeshes.push(hitMesh);
 
-  seats.push({ index: i, group: seatGroup, bench, x, z, angle, lookAngle });
+  seats.push({ index: i, group: seatGroup, bench, woodPileGroup, x, z, angle, lookAngle });
+}
+
+function updateMyWoodPileVisual() {
+  const mySeat = seats[state.mySeatIndex] || seats[0];
+  const pile = mySeat.woodPileGroup;
+  while (pile.children.length > 0) {
+    pile.remove(pile.children[0]);
+  }
+  const count = Math.min(12, state.myBranches);
+  for (let i = 0; i < count; i++) {
+    const b = createTreeBranchBundleMesh();
+    b.scale.setScalar(0.65);
+    const row = Math.floor(i / 2);
+    const col = i % 2;
+    b.position.set((col - 0.5) * 0.22, 0.06 + row * 0.09, 0);
+    b.rotation.y = (i % 2 === 0 ? 0.15 : -0.15);
+    pile.add(b);
+  }
+
+  const badge = document.getElementById('myBranchesDisplay');
+  if (badge) badge.textContent = `${state.myBranches}개`;
+  const subTxt = document.getElementById('putLogSubText');
+  if (subTxt) {
+    subTxt.textContent = state.myBranches > 0 ? `모은 땔감 사용 (${state.myBranches}개)` : '불꽃 활짝 키우기!';
+  }
 }
 
 // ====================================================
@@ -689,7 +928,7 @@ const camperHitMeshes = [];
 
 function createCamper3D(user) {
   const group = new THREE.Group();
-  group.scale.setScalar(1.32); // Large, friendly character!
+  group.scale.setScalar(1.32);
 
   const bodyRoot = new THREE.Group();
   group.add(bodyRoot);
@@ -700,7 +939,6 @@ function createCamper3D(user) {
   const bootMat = new THREE.MeshStandardMaterial({ color: 0x4f311c, roughness: 0.85 });
   const skinMat = new THREE.MeshStandardMaterial({ color: 0xffe3c8, roughness: 0.55 });
 
-  // Articulated Legs
   function buildLeg(sideSign) {
     const hipPivot = new THREE.Group();
     hipPivot.position.set(sideSign * 0.16, 0.48, 0);
@@ -731,7 +969,6 @@ function createCamper3D(user) {
   const rightLeg = buildLeg(1);
   bodyRoot.add(leftLeg.hipPivot, rightLeg.hipPivot);
 
-  // Torso
   const torsoPivot = new THREE.Group();
   torsoPivot.position.set(0, 0.48, 0);
   bodyRoot.add(torsoPivot);
@@ -741,7 +978,6 @@ function createCamper3D(user) {
   torso.castShadow = true;
   torsoPivot.add(torso);
 
-  // Scarf
   const scarf = new THREE.Mesh(
     new THREE.TorusGeometry(0.22, 0.07, 10, 18),
     new THREE.MeshStandardMaterial({ color: 0xfff0d4, roughness: 0.8 })
@@ -750,7 +986,6 @@ function createCamper3D(user) {
   scarf.position.y = 0.76;
   torsoPivot.add(scarf);
 
-  // Head + Rosy Cheeks + Beanie
   const headGroup = new THREE.Group();
   headGroup.position.y = 0.98;
   torsoPivot.add(headGroup);
@@ -759,7 +994,6 @@ function createCamper3D(user) {
   head.castShadow = true;
   headGroup.add(head);
 
-  // Cute Eyes & Rosy Cheeks (Visible when turning or in 3/4 view)
   const eyeMat = new THREE.MeshBasicMaterial({ color: 0x1e1610 });
   const cheekMat = new THREE.MeshBasicMaterial({ color: 0xff8577, transparent: true, opacity: 0.65 });
   [-1, 1].forEach((s) => {
@@ -787,7 +1021,6 @@ function createCamper3D(user) {
   pomPom.position.set(0, 0.3, -0.04);
   headGroup.add(pomPom);
 
-  // Arms & Big Expressive Hands
   function buildArm(sideSign) {
     const shoulder = new THREE.Group();
     shoulder.position.set(sideSign * 0.28, 0.68, 0.04);
@@ -810,8 +1043,7 @@ function createCamper3D(user) {
   const rightArm = buildArm(1);
   torsoPivot.add(leftArm.shoulder, rightArm.shoulder);
 
-  // --- CRYSTAL-CLEAR, OVERSIZED 3D PROPS SO KIDS & ADULTS INSTANTLY SEE WHAT IS HAPPENING! ---
-  // 1. Warm Heat Glow Rings around hands when warming hands (손 녹이기 온기 이펙트)
+  // 1. Hand Warm Glow
   const handWarmGlow = new THREE.Mesh(
     new THREE.RingGeometry(0.12, 0.28, 24),
     new THREE.MeshBasicMaterial({ color: 0xffaa33, side: THREE.DoubleSide, transparent: true, opacity: 0.55, blending: THREE.AdditiveBlending })
@@ -819,14 +1051,19 @@ function createCamper3D(user) {
   handWarmGlow.position.set(0, 0.56, 0.65);
   torsoPivot.add(handWarmGlow);
 
-  // 2. Big Firewood Log held in both hands
+  // 2. Held Firewood Log / Branch Bundle in both hands
   const heldLogMesh = createFirewoodLogMesh(0.95, 0.13);
   heldLogMesh.rotation.z = Math.PI / 2;
   heldLogMesh.position.set(0, 0.54, 0.52);
   heldLogMesh.visible = false;
   torsoPivot.add(heldLogMesh);
 
-  // 3. Giant Marshmallow on Skewer (stretches right into the firelight!)
+  const heldBranchMesh = createTreeBranchBundleMesh();
+  heldBranchMesh.position.set(0, 0.54, 0.52);
+  heldBranchMesh.visible = false;
+  torsoPivot.add(heldBranchMesh);
+
+  // 3. Giant Marshmallow on Skewer
   const mallowGroup = new THREE.Group();
   const skewer = new THREE.Mesh(
     new THREE.CylinderGeometry(0.016, 0.016, 1.15, 8),
@@ -837,7 +1074,7 @@ function createCamper3D(user) {
   mallowGroup.add(skewer);
 
   const mallowMesh = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.125, 0.125, 0.22, 16), // Big, unmistakable marshmallow!
+    new THREE.CylinderGeometry(0.125, 0.125, 0.22, 16),
     new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.35, emissive: 0x331a00, emissiveIntensity: 0.2 })
   );
   mallowMesh.rotation.x = Math.PI / 2;
@@ -847,11 +1084,11 @@ function createCamper3D(user) {
   mallowGroup.visible = false;
   torsoPivot.add(mallowGroup);
 
-  // 4. Big Bright Cocoa/Coffee Mug + Rising 3D Steam Puffs
+  // 4. Big Bright Cocoa/Coffee Mug + Rising Steam
   const coffeeGroup = new THREE.Group();
   const mug = new THREE.Mesh(
     new THREE.CylinderGeometry(0.11, 0.095, 0.22, 16),
-    new THREE.MeshStandardMaterial({ color: 0xffd166, roughness: 0.25 }) // Cheerful warm yellow camp mug!
+    new THREE.MeshStandardMaterial({ color: 0xffd166, roughness: 0.25 })
   );
   coffeeGroup.add(mug);
   const cocoaTop = new THREE.Mesh(
@@ -862,7 +1099,6 @@ function createCamper3D(user) {
   cocoaTop.position.y = 0.105;
   coffeeGroup.add(cocoaTop);
 
-  // 3D Rising Steam Rings above the mug
   const steamRings = [];
   for (let s = 0; s < 3; s++) {
     const steam = new THREE.Mesh(
@@ -878,7 +1114,6 @@ function createCamper3D(user) {
   coffeeGroup.visible = false;
   torsoPivot.add(coffeeGroup);
 
-  // Green Classic Thermos standing beside the camper
   const thermosMesh = new THREE.Mesh(
     new THREE.CylinderGeometry(0.095, 0.095, 0.38, 12),
     new THREE.MeshStandardMaterial({ color: 0x2d6a4f, metalness: 0.4, roughness: 0.35 })
@@ -887,7 +1122,7 @@ function createCamper3D(user) {
   thermosMesh.castShadow = true;
   group.add(thermosMesh);
 
-  // 5. Dazzling Sparkler Wand (불꽃놀이 스파클러)
+  // 5. Sparkler Wand
   const sparklerGroup = new THREE.Group();
   const spRod = new THREE.Mesh(
     new THREE.CylinderGeometry(0.014, 0.014, 0.85, 6),
@@ -906,7 +1141,6 @@ function createCamper3D(user) {
   sparklerGroup.visible = false;
   torsoPivot.add(sparklerGroup);
 
-  // Hitbox for clicking camper
   const hitBox = new THREE.Mesh(
     new THREE.CylinderGeometry(0.55, 0.55, 1.9, 8),
     new THREE.MeshBasicMaterial({ visible: false })
@@ -916,7 +1150,6 @@ function createCamper3D(user) {
   group.add(hitBox);
   camperHitMeshes.push(hitBox);
 
-  // Floating Action Status Bubble (Clear, kid-friendly badge right above the character!)
   const bubbleEl = document.createElement('div');
   bubbleEl.className = 'char-action-bubble';
   bubbleContainer.appendChild(bubbleEl);
@@ -935,6 +1168,7 @@ function createCamper3D(user) {
     rightArm,
     handWarmGlow,
     heldLogMesh,
+    heldBranchMesh,
     mallowGroup,
     mallowMesh,
     coffeeGroup,
@@ -953,6 +1187,7 @@ function createCamper3D(user) {
     offeringGiftType: 'coffee',
     receivingUntil: 0,
     placingLogState: null,
+    gatheringState: null, // { phase, branchObj, startTime, ... }
     walkState: null,
     poseBlend: {
       torsoLean: 0.18,
@@ -983,7 +1218,7 @@ function syncCampers3D() {
     camper.hitBox.userData.seatIndex = u.seatIndex;
 
     const seat = seats[u.seatIndex] || seats[0];
-    if (prevSeat !== u.seatIndex || (!camper.walkState && !camper.placingLogState && camper.group.position.lengthSq() < 0.01)) {
+    if (prevSeat !== u.seatIndex || (!camper.walkState && !camper.placingLogState && !camper.gatheringState && camper.group.position.lengthSq() < 0.01)) {
       camper.walkState = null;
       camper.group.position.set(seat.x, 0, seat.z);
       camper.group.rotation.y = seat.lookAngle;
@@ -999,15 +1234,79 @@ function syncCampers3D() {
       camperMeshes.delete(id);
     }
   }
+
+  updateMyWoodPileVisual();
 }
 
 // ====================================================
-// 7. NATURAL 3D FIREWOOD PLACEMENT & ROARING FLAME SURGE
+// 7. FIREWOOD GATHERING GAME & ROARING FLAME SURGE
 // ====================================================
 const activeEffects = [];
 let fireRoarSurgeUntil = 0;
 
-function triggerNaturalLogPlacement(fromSeatIndex) {
+function findNearestAvailableBranch(fromX, fromZ) {
+  let best = null;
+  let bestDist = Infinity;
+  for (const b of forageBranches) {
+    if (!b.available) continue;
+    const d = Math.hypot(b.x - fromX, b.z - fromZ);
+    if (d < bestDist) {
+      bestDist = d;
+      best = b;
+    }
+  }
+  return best;
+}
+
+function triggerGatherBranchAnimation(fromSeatIndex, specificBranchIndex = null, isMe = false) {
+  let actor = null;
+  for (const c of camperMeshes.values()) {
+    if (c.seatIndex === fromSeatIndex) {
+      actor = c;
+      break;
+    }
+  }
+  const seat = seats[fromSeatIndex] || seats[0];
+  if (!actor) return;
+
+  let targetBranch = null;
+  if (typeof specificBranchIndex === 'number' && forageBranches[specificBranchIndex] && forageBranches[specificBranchIndex].available) {
+    targetBranch = forageBranches[specificBranchIndex];
+  } else {
+    targetBranch = findNearestAvailableBranch(seat.x, seat.z);
+  }
+
+  if (!targetBranch) {
+    // Respawn all branches if all were collected!
+    forageBranches.forEach((b) => {
+      b.available = true;
+      b.group.visible = true;
+    });
+    targetBranch = findNearestAvailableBranch(seat.x, seat.z);
+  }
+  if (!targetBranch) return;
+
+  actor.placingLogState = null;
+  actor.walkState = null;
+  actor.gatheringState = {
+    phase: 'walkToBranch',
+    branch: targetBranch,
+    startTime: Date.now(),
+    startX: actor.group.position.x,
+    startZ: actor.group.position.z,
+    seatX: seat.x,
+    seatZ: seat.z,
+    lookAngle: seat.lookAngle,
+    isMe
+  };
+
+  if (isMe) {
+    sendServerAction({ type: 'gatherBranch', branchIndex: targetBranch.index });
+    showCenterNotice('🌿 숲속 바닥에 떨어진 나뭇가지 땔감을 주우러 총총 걸어가요!');
+  }
+}
+
+function triggerNaturalLogPlacement(fromSeatIndex, usedGatheredBranch = false) {
   let actor = null;
   for (const c of camperMeshes.values()) {
     if (c.seatIndex === fromSeatIndex) {
@@ -1023,8 +1322,11 @@ function triggerNaturalLogPlacement(fromSeatIndex) {
   const targetX = Math.cos(seat.angle) * fireEdgeDist;
   const targetZ = Math.sin(seat.angle) * fireEdgeDist;
 
+  actor.gatheringState = null;
+  actor.walkState = null;
   actor.placingLogState = {
     phase: 'walkToFire',
+    usedGatheredBranch,
     startTime: Date.now(),
     startX: seat.x,
     startZ: seat.z,
@@ -1035,33 +1337,32 @@ function triggerNaturalLogPlacement(fromSeatIndex) {
   };
 }
 
-function addPhysicalLogToFire(angle) {
-  if (dynamicLogsGroup.children.length >= 10) {
+function addPhysicalLogToFire(angle, isBranchBundle = false) {
+  if (dynamicLogsGroup.children.length >= 12) {
     dynamicLogsGroup.remove(dynamicLogsGroup.children[0]);
   }
 
-  const newLog = createFirewoodLogMesh(1.95, 0.14);
+  const newPiece = isBranchBundle ? createTreeBranchBundleMesh() : createFirewoodLogMesh(1.95, 0.14);
   const r = 0.22 + Math.random() * 0.26;
-  newLog.position.set(Math.cos(angle) * r, 0.44 + dynamicLogsGroup.children.length * 0.04, Math.sin(angle) * r);
-  newLog.rotation.z = Math.cos(angle) * 0.48 + (Math.random() - 0.5) * 0.2;
-  newLog.rotation.x = Math.sin(angle) * 0.48 + (Math.random() - 0.5) * 0.2;
-  newLog.rotation.y = Math.random() * Math.PI;
-  dynamicLogsGroup.add(newLog);
+  newPiece.position.set(Math.cos(angle) * r, 0.44 + dynamicLogsGroup.children.length * 0.04, Math.sin(angle) * r);
+  newPiece.rotation.z = Math.cos(angle) * 0.48 + (Math.random() - 0.5) * 0.2;
+  newPiece.rotation.x = Math.sin(angle) * 0.48 + (Math.random() - 0.5) * 0.2;
+  newPiece.rotation.y = Math.random() * Math.PI;
+  dynamicLogsGroup.add(newPiece);
 
   soundEngine.playWoodRoar();
-  fireRoarSurgeUntil = Date.now() + 3500;
+  fireRoarSurgeUntil = Date.now() + 3800;
 
-  // Spectacular 35-Spark Fountain Burst!
-  for (let i = 0; i < 35; i++) {
+  for (let i = 0; i < 38; i++) {
     const sp = new THREE.Mesh(
-      new THREE.SphereGeometry(0.042, 6, 6),
+      new THREE.SphereGeometry(0.044, 6, 6),
       new THREE.MeshBasicMaterial({ color: 0xffe066, transparent: true, opacity: 1, blending: THREE.AdditiveBlending })
     );
     sp.position.set((Math.random() - 0.5) * 0.8, 0.5, (Math.random() - 0.5) * 0.8);
     scene.add(sp);
-    const vx = (Math.random() - 0.5) * 2.4;
-    const vy = 2.2 + Math.random() * 2.8;
-    const vz = (Math.random() - 0.5) * 2.4;
+    const vx = (Math.random() - 0.5) * 2.5;
+    const vy = 2.3 + Math.random() * 2.9;
+    const vz = (Math.random() - 0.5) * 2.5;
     const born = Date.now();
     activeEffects.push({
       update: (dt) => {
@@ -1224,15 +1525,29 @@ function triggerCampfireAction(actionId) {
   const myCamper = camperMeshes.get(state.clientId);
 
   switch (actionId) {
+    case 'gather': {
+      triggerGatherBranchAnimation(state.mySeatIndex, null, true);
+      break;
+    }
     case 'log': {
+      const usedBranch = state.myBranches > 0;
+      if (usedBranch) {
+        state.myBranches--;
+        updateMyWoodPileVisual();
+      }
       state.logsAddedCount++;
-      state.fireHeat = Math.min(1250, state.fireHeat + 45);
+      const heatGain = usedBranch ? 55 : 40;
+      state.fireHeat = Math.min(1300, state.fireHeat + heatGain);
       document.getElementById('logsCountDisplay').textContent = `${state.logsAddedCount}개`;
       document.getElementById('fireTempDisplay').textContent = `${state.fireHeat}°C`;
 
-      triggerNaturalLogPlacement(state.mySeatIndex);
+      triggerNaturalLogPlacement(state.mySeatIndex, usedBranch);
       sendServerAction({ type: 'throwLog' });
-      showCenterNotice('🪵 영차! 큰 장작을 들고 가서 모닥불에 넣습니다. 불꽃이 활짝 커져요!');
+      showCenterNotice(
+        usedBranch
+          ? `🪵 직접 주워 모은 나뭇가지 땔감을 모닥불에 넣어요! 불꽃이 훨씬 크게 타오릅니다! (+${heatGain}°C)`
+          : '🪵 영차! 큰 장작을 들고 가서 모닥불에 넣습니다. 불꽃이 활짝 커져요!'
+      );
       break;
     }
     case 'hands': {
@@ -1368,6 +1683,41 @@ function animate() {
   camera.position.copy(camControl.currentPos);
   camera.lookAt(camControl.currentLookAt);
 
+  // --- ANIMATE SEASONAL PARTICLES (벚꽃 / 반딧불 / 단풍 / 눈) ---
+  const seasonCfg = SEASONS[state.season] || SEASONS.autumn;
+  seasonParticles.forEach((p) => {
+    const u = p.userData;
+    if (seasonCfg.particleType === 'fireflies') {
+      // Summer Fireflies float up and down and blink warmly
+      p.position.y += Math.sin(elapsed * 2.0 + u.phase) * 0.008;
+      p.position.x += Math.cos(elapsed * 1.3 + u.phase) * 0.01;
+      p.position.z += Math.sin(elapsed * 1.5 + u.phase) * 0.01;
+      p.rotation.set(0, 0, 0);
+      p.lookAt(camera.position);
+      p.material.opacity = 0.25 + 0.7 * Math.pow(0.5 + 0.5 * Math.sin(elapsed * 3.5 + u.phase), 2);
+    } else {
+      // Falling Cherry Blossoms, Autumn Maple Leaves, or Winter Snowflakes
+      const speedMult = seasonCfg.particleType === 'snow' ? 0.85 : 1.0;
+      p.position.y += u.vy * dt * speedMult;
+      p.position.x += (u.vx + Math.sin(elapsed * 1.8 + u.phase) * 0.35) * dt;
+      p.position.z += (u.vz + Math.cos(elapsed * 1.6 + u.phase) * 0.35) * dt;
+      p.rotation.x += u.rotSpeed * dt;
+      p.rotation.y += u.rotSpeed * 0.8 * dt;
+      p.material.opacity = 0.85;
+      if (p.position.y <= 0.05) {
+        resetSeasonParticle(p, false);
+      }
+    }
+  });
+
+  // Pulse golden indicator rings under forageable branches
+  forageBranches.forEach((b, idx) => {
+    if (b.available) {
+      b.ring.scale.setScalar(0.85 + Math.sin(elapsed * 3.5 + idx) * 0.15);
+      b.ring.material.opacity = 0.35 + Math.sin(elapsed * 3.5 + idx) * 0.2;
+    }
+  });
+
   // --- ANIMATE PHOTOREALISTIC FBM SHADER FLAMES ---
   const isAurora = now < state.auroraUntil;
   const surgeBoost = now < fireRoarSurgeUntil ? 0.38 : 0.0;
@@ -1408,6 +1758,7 @@ function animate() {
 
     const isWalking = Boolean(camper.walkState && camper.walkState.isWalking);
     const isPlacingLog = Boolean(camper.placingLogState);
+    const isGathering = Boolean(camper.gatheringState);
     const isOffering = now < camper.offeringUntil;
     const isReceiving = now < camper.receivingUntil;
     const isNodding = now < camper.nodUntil;
@@ -1421,17 +1772,97 @@ function animate() {
 
     camper.handWarmGlow.visible = false;
     camper.heldLogMesh.visible = false;
+    camper.heldBranchMesh.visible = false;
     camper.mallowGroup.visible = false;
     camper.coffeeGroup.visible = false;
     camper.sparklerGroup.visible = false;
 
     let bubbleHTML = '';
 
-    // 1. Placing Firewood Log Sequence
-    if (isPlacingLog) {
+    // 1. Firewood Branch Gathering Sequence (나뭇가지 줍기 놀이!)
+    if (isGathering) {
+      const gs = camper.gatheringState;
+      const stepElapsed = (now - gs.startTime) / 1000;
+
+      if (gs.phase === 'walkToBranch') {
+        bubbleHTML = `🌿 나뭇가지 땔감 주우러 가는 중!`;
+        const dx = gs.branch.x - camper.group.position.x;
+        const dz = gs.branch.z - camper.group.position.z;
+        const dist = Math.hypot(dx, dz);
+        if (dist > 0.35) {
+          const step = Math.min(dist, 0.075);
+          camper.group.position.x += (dx / dist) * step;
+          camper.group.position.z += (dz / dist) * step;
+          camper.group.rotation.y = Math.atan2(dx, dz);
+        } else {
+          gs.phase = 'bendAndPickup';
+          gs.startTime = now;
+        }
+        camper.bodyRoot.position.y = lerp(camper.bodyRoot.position.y, 0.2, 0.18);
+        const swing = Math.sin(elapsed * 11) * 0.42;
+        camper.leftLeg.hipPivot.rotation.set(swing, 0, 0);
+        camper.rightLeg.hipPivot.rotation.set(-swing, 0, 0);
+      } else if (gs.phase === 'bendAndPickup') {
+        bubbleHTML = `🌿 "좋은 땔감 찾았다!" 줍는 중...`;
+        const t = Math.min(1, stepElapsed / 0.55);
+        targetTorsoLean = 0.72 * Math.sin(t * Math.PI);
+        targetLeftArmX = -0.9;
+        targetRightArmX = -0.9;
+
+        if (t >= 0.5 && gs.branch.available) {
+          gs.branch.available = false;
+          gs.branch.group.visible = false;
+          soundEngine.playPickupPop();
+          // Respawn this branch after 14 seconds
+          const bRef = gs.branch;
+          setTimeout(() => {
+            bRef.available = true;
+            bRef.group.visible = true;
+          }, 14000);
+        }
+
+        if (t >= 1) {
+          gs.phase = 'carryBackToSeat';
+          gs.startTime = now;
+        }
+      } else if (gs.phase === 'carryBackToSeat') {
+        bubbleHTML = `🌿 나뭇가지 들고 내 자리로 돌아가는 중!`;
+        camper.heldBranchMesh.visible = true;
+        targetTorsoLean = 0.14;
+        targetLeftArmX = -0.52;
+        targetLeftArmY = 0.24;
+        targetRightArmX = -0.52;
+        targetRightArmY = -0.24;
+
+        const dx = gs.seatX - camper.group.position.x;
+        const dz = gs.seatZ - camper.group.position.z;
+        const dist = Math.hypot(dx, dz);
+        if (dist > 0.1) {
+          const step = Math.min(dist, 0.075);
+          camper.group.position.x += (dx / dist) * step;
+          camper.group.position.z += (dz / dist) * step;
+          camper.group.rotation.y = Math.atan2(dx, dz);
+          const swing = Math.sin(elapsed * 11) * 0.4;
+          camper.leftLeg.hipPivot.rotation.set(swing, 0, 0);
+          camper.rightLeg.hipPivot.rotation.set(-swing, 0, 0);
+        } else {
+          camper.group.position.set(gs.seatX, 0, gs.seatZ);
+          camper.group.rotation.y = gs.lookAngle;
+          camper.gatheringState = null;
+
+          if (gs.isMe) {
+            state.myBranches++;
+            updateMyWoodPileVisual();
+            soundEngine.playHappyChime();
+            showCenterNotice(`🌿 나뭇가지 땔감 획득! (현재 모은 땔감: ${state.myBranches}개) 이제 '🪵 땔감 불에 넣기'를 눌러보세요!`);
+          }
+        }
+      }
+    } else if (isPlacingLog) {
+      // 2. Placing Firewood Log / Branch Bundle into Fire
       const pls = camper.placingLogState;
       const stepElapsed = (now - pls.startTime) / 1000;
-      bubbleHTML = `🪵 영차! 장작 넣는 중!`;
+      bubbleHTML = pls.usedGatheredBranch ? `🌿 모은 나뭇가지 땔감 넣는 중!` : `🪵 영차! 장작 넣는 중!`;
 
       if (pls.phase === 'walkToFire') {
         const t = Math.min(1, stepElapsed / 0.7);
@@ -1444,7 +1875,9 @@ function animate() {
         camper.leftLeg.hipPivot.rotation.set(swing, 0, 0);
         camper.rightLeg.hipPivot.rotation.set(-swing, 0, 0);
 
-        camper.heldLogMesh.visible = true;
+        if (pls.usedGatheredBranch) camper.heldBranchMesh.visible = true;
+        else camper.heldLogMesh.visible = true;
+
         targetTorsoLean = 0.16;
         targetLeftArmX = -0.55;
         targetLeftArmY = 0.25;
@@ -1457,13 +1890,15 @@ function animate() {
         }
       } else if (pls.phase === 'kneelAndPlace') {
         const t = Math.min(1, stepElapsed / 0.5);
-        camper.heldLogMesh.visible = t < 0.75;
+        if (pls.usedGatheredBranch) camper.heldBranchMesh.visible = t < 0.75;
+        else camper.heldLogMesh.visible = t < 0.75;
+
         targetTorsoLean = 0.6 * Math.sin(t * Math.PI);
         targetLeftArmX = -0.85;
         targetRightArmX = -0.85;
 
         if (t >= 1) {
-          addPhysicalLogToFire(pls.seatAngle);
+          addPhysicalLogToFire(pls.seatAngle, pls.usedGatheredBranch);
           pls.phase = 'returnToSeat';
           pls.startTime = now;
         }
@@ -1484,7 +1919,7 @@ function animate() {
         }
       }
     } else if (isWalking) {
-      // 2. Walking to Neighbor or Seat
+      // 3. Walking to Neighbor or Seat
       const ws = camper.walkState;
       const dx = ws.targetX - camper.group.position.x;
       const dz = ws.targetZ - camper.group.position.z;
@@ -1509,7 +1944,7 @@ function animate() {
       camper.rightLeg.hipPivot.rotation.set(-swing, 0, 0);
       camper.rightLeg.kneePivot.rotation.set(Math.max(0, swing * 0.6), 0, 0);
     } else {
-      // 3. Seated on Log Bench
+      // 4. Seated on Log Bench
       camper.bodyRoot.position.y = lerp(camper.bodyRoot.position.y, 0.0, 0.12);
       camper.leftLeg.hipPivot.rotation.set(-Math.PI / 2 + 0.08, 0.07, 0);
       camper.leftLeg.kneePivot.rotation.set(Math.PI / 2 - 0.1, 0, 0);
@@ -1542,7 +1977,6 @@ function animate() {
         camper.mallowGroup.visible = (camper.action === 'mallow');
         bubbleHTML = `🙏 "고맙습니다! 잘 먹을게요!" 😊`;
       } else if (camper.action === 'hands') {
-        // Warming hands with visible golden warmth rings
         camper.handWarmGlow.visible = true;
         camper.handWarmGlow.scale.setScalar(0.85 + Math.sin(elapsed * 5) * 0.18);
         camper.handWarmGlow.material.opacity = 0.45 + Math.sin(elapsed * 5) * 0.2;
@@ -1560,7 +1994,6 @@ function animate() {
         const roastElapsed = (now - camper.roastStartTime) / 1000;
         const roastPct = Math.min(100, Math.floor((roastElapsed / 9.0) * 100));
 
-        // When 100% roasted, occasionally bring it to mouth ("냠냠!") then roast a fresh one!
         const isEating = roastElapsed > 10.5 && roastElapsed < 12.5;
         if (roastElapsed >= 12.5) {
           camper.roastStartTime = now;
@@ -1584,7 +2017,7 @@ function animate() {
             new THREE.Color(0xd97f2b),
             ratio
           );
-          camper.mallowMesh.scale.setScalar(1.0 + ratio * 0.18); // Puffs up as it roasts!
+          camper.mallowMesh.scale.setScalar(1.0 + ratio * 0.18);
 
           if (isMe) {
             bubbleHTML = roastPct < 100
@@ -1594,7 +2027,6 @@ function animate() {
         }
       } else if (camper.action === 'coffee') {
         camper.coffeeGroup.visible = true;
-        // Animate rising 3D steam rings above the mug
         camper.steamRings.forEach((st, idx) => {
           const cycle = (elapsed * 0.9 + idx * 0.33) % 1;
           st.position.y = 0.14 + cycle * 0.32;
@@ -1614,14 +2046,12 @@ function animate() {
       } else if (camper.action === 'sparkler') {
         camper.sparklerGroup.visible = true;
         targetTorsoLean = 0.16;
-        // Wave sparkler joyfully left and right!
         const wave = Math.sin(elapsed * 4.5) * 0.28;
         targetLeftArmX = -0.45 + Math.cos(elapsed * 4.5) * 0.12;
         targetLeftArmY = wave;
         camper.spCore.scale.setScalar(0.85 + Math.random() * 0.75);
         if (isMe) bubbleHTML = `🎇 치지직! 반짝반짝 불꽃놀이 중!`;
 
-        // Shoot bright multi-colored sparkler stars
         for (let s = 0; s < 2; s++) {
           const worldTip = new THREE.Vector3();
           camper.spCore.getWorldPosition(worldTip);
@@ -1677,7 +2107,6 @@ function animate() {
     camper.rightArm.shoulder.rotation.set(b.rightArmX, b.rightArmY, 0);
     camper.headGroup.rotation.x = b.headX;
 
-    // Update Floating Action Bubble above the character
     if (camper.bubbleEl) {
       if (bubbleHTML && !state.zenMode && camper.group.visible) {
         camper.bubbleEl.innerHTML = bubbleHTML;
@@ -1701,7 +2130,7 @@ function animate() {
 }
 
 // ====================================================
-// 11. POINTER & CAMERA CONTROLS
+// 11. POINTER & CAMERA CONTROLS (CLICK BRANCHES, SEATS, OR FRIENDS!)
 // ====================================================
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
@@ -1734,7 +2163,18 @@ window.addEventListener('pointerup', (e) => {
   mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
   raycaster.setFromCamera(mouse, camera);
 
-  // 1. Clicked another camper? -> Walk over and give gift!
+  // 1. Clicked a 3D Tree Branch on the ground? -> Walk over and pick it up!
+  const branchHits = raycaster.intersectObjects(forageBranchHitMeshes, false);
+  if (branchHits.length > 0) {
+    const bIdx = branchHits[0].object.userData.branchIndex;
+    if (typeof bIdx === 'number' && forageBranches[bIdx] && forageBranches[bIdx].available) {
+      soundEngine.init();
+      triggerGatherBranchAnimation(state.mySeatIndex, bIdx, true);
+      return;
+    }
+  }
+
+  // 2. Clicked another camper? -> Walk over and give gift!
   const camperHits = raycaster.intersectObjects(camperHitMeshes, false);
   if (camperHits.length > 0) {
     const hitData = camperHits[0].object.userData;
@@ -1747,11 +2187,15 @@ window.addEventListener('pointerup', (e) => {
     }
   }
 
-  // 2. Clicked a Log Bench? -> Move seat
+  // 3. Clicked a Log Bench? -> Move seat
   const seatHits = raycaster.intersectObjects(seatClickMeshes, false);
   if (seatHits.length > 0) {
     const newSeat = seatHits[0].object.userData.seatIndex;
     if (typeof newSeat === 'number' && newSeat !== state.mySeatIndex) {
+      // Clear old seat woodpile visual before moving
+      const oldPile = seats[state.mySeatIndex].woodPileGroup;
+      while (oldPile.children.length > 0) oldPile.remove(oldPile.children[0]);
+
       state.mySeatIndex = newSeat;
       camControl.orbitOffset = 0;
       const myCamper = camperMeshes.get(state.clientId);
@@ -1764,10 +2208,12 @@ window.addEventListener('pointerup', (e) => {
           onArrive: () => {
             myCamper.group.rotation.y = targetS.lookAngle;
             myCamper.walkState = null;
+            updateMyWoodPileVisual();
             sendServerAction({ type: 'moveSeat', seatIndex: newSeat });
           }
         };
       } else {
+        updateMyWoodPileVisual();
         sendServerAction({ type: 'moveSeat', seatIndex: newSeat });
       }
       showCenterNotice('👣 선택한 통나무 자리로 총총 걸어가 앉아요!');
@@ -1804,7 +2250,7 @@ function rebuildActiveUsersList() {
   document.getElementById('onlineCount').textContent = String(realList.length);
 
   if (state.enableSoloCompanion && realList.length === 1) {
-    const companionSeat = (state.mySeatIndex + 1) % MAX_SEATS; // Sit right next to the user!
+    const companionSeat = (state.mySeatIndex + 1) % MAX_SEATS;
     state.users = [
       ...realList,
       {
@@ -1875,6 +2321,10 @@ function applyRoomSnapshot(snapshot) {
   state.fireHeat = snapshot.fireHeat || 750;
   document.getElementById('fireTempDisplay').textContent = `${state.fireHeat}°C`;
 
+  if (snapshot.season && SEASONS[snapshot.season] && snapshot.season !== state.season) {
+    applySeasonTheme(snapshot.season, false);
+  }
+
   state.realUsers = snapshot.users || [];
   const me = state.realUsers.find((u) => u.id === state.clientId);
   if (me) state.mySeatIndex = me.seatIndex;
@@ -1888,9 +2338,15 @@ function handleIncomingRoomEffect(eff) {
     state.fireHeat = eff.fireHeat || state.fireHeat + 45;
     document.getElementById('fireTempDisplay').textContent = `${state.fireHeat}°C`;
     if (eff.fromSeat !== state.mySeatIndex) {
-      triggerNaturalLogPlacement(eff.fromSeat);
-      showCenterNotice(`🪵 ${eff.actorName}님이 모닥불에 큰 장작을 넣었어요!`);
+      triggerNaturalLogPlacement(eff.fromSeat, true);
+      showCenterNotice(`🪵 ${eff.actorName}님이 모닥불에 땔감을 넣었어요!`);
     }
+  } else if (eff.effect === 'gatherBranch') {
+    if (eff.fromSeat !== state.mySeatIndex) {
+      triggerGatherBranchAnimation(eff.fromSeat, eff.branchIndex, false);
+    }
+  } else if (eff.effect === 'changeSeason' && eff.season) {
+    applySeasonTheme(eff.season, true);
   } else if (eff.effect === 'aurora') {
     state.auroraUntil = Date.now() + 18000;
     if (eff.fromSeat !== state.mySeatIndex) {
@@ -1924,11 +2380,12 @@ function sendServerAction(payload) {
 }
 
 // ====================================================
-// 13. UI CONTROLS & EVENT LISTENERS
+// 13. UI CONTROLS & SEASON SWITCHER LISTENERS
 // ====================================================
 function applyRoomAtmosphere() {
   const isRain = state.room === 'rain-04';
-  document.getElementById('currentRoomName').textContent = isRain ? '⛺ 빗소리 캠핑 모닥불' : '🌲 노을빛 소나무 숲';
+  const cfg = SEASONS[state.season] || SEASONS.autumn;
+  document.getElementById('currentRoomName').textContent = isRain ? '⛺ 빗소리 캠핑 모닥불' : cfg.label;
   document.getElementById('currentRegionTag').textContent = `채널 #${state.instance}`;
 
   document.querySelectorAll('.room-item').forEach((btn) => {
@@ -1939,6 +2396,31 @@ function applyRoomAtmosphere() {
   document.getElementById('volRain').value = rainVol;
   document.getElementById('valRain').textContent = `${rainVol}%`;
   soundEngine.setVolume('rain', rainVol);
+}
+
+// 4-Season Buttons (Top Bar, Mobile Pill, and Room Modal)
+function selectSeason(seasonKey) {
+  soundEngine.init();
+  soundEngine.playHappyChime();
+  applySeasonTheme(seasonKey, true);
+  sendServerAction({ type: 'changeSeason', season: seasonKey });
+}
+
+document.querySelectorAll('.season-tab').forEach((btn) => {
+  btn.addEventListener('click', () => selectSeason(btn.dataset.season));
+});
+
+document.querySelectorAll('#modalSeasonGroup .mini-pill').forEach((btn) => {
+  btn.addEventListener('click', () => selectSeason(btn.dataset.season));
+});
+
+const seasonOrder = ['spring', 'summer', 'autumn', 'winter'];
+const seasonCycleMobileBtn = document.getElementById('seasonCycleMobileBtn');
+if (seasonCycleMobileBtn) {
+  seasonCycleMobileBtn.addEventListener('click', () => {
+    const nextIdx = (seasonOrder.indexOf(state.season) + 1) % seasonOrder.length;
+    selectSeason(seasonOrder[nextIdx]);
+  });
 }
 
 const previewNickname = document.getElementById('previewNickname');
@@ -1957,7 +2439,7 @@ document.getElementById('enterCampBtn').addEventListener('click', () => {
   document.getElementById('bottomDock').classList.remove('hidden');
   state.enteredAt = Date.now();
   connectMultiplayerRoom();
-  showCenterNotice('🔥 따뜻한 모닥불 앞에 앉았어요! 아래 버튼들을 하나씩 눌러보세요!');
+  showCenterNotice('🔥 모닥불 앞에 앉았어요! 나뭇가지 땔감도 줍고 상단에서 봄·여름·가을·겨울 계절도 바꿔보세요!');
 });
 
 // Camera POV Toggle
@@ -1974,7 +2456,7 @@ document.getElementById('cameraPovBtn').addEventListener('click', () => {
   } else if (state.povMode === 'first') {
     state.povMode = 'wide';
     povLabel.textContent = '캠핑장 전체 보기';
-    showCenterNotice('📷 전체 보기: 밝고 아늑한 소나무 숲 캠핑장 전체를 둘러봐요!');
+    showCenterNotice('📷 캠핑장 전체 보기: 숲속 바닥에 반짝이는 나뭇가지들을 클릭해 직접 주워보세요!');
   } else {
     state.povMode = 'shoulder';
     povLabel.textContent = '내 캐릭터+불꽃';
@@ -2067,7 +2549,7 @@ document.getElementById('burnWorrySubmitBtn').addEventListener('click', () => {
   worryInput.value = '';
   worryCount.textContent = '0 / 100자';
   document.getElementById('worryModal').classList.add('hidden');
-  triggerNaturalLogPlacement(state.mySeatIndex);
+  triggerNaturalLogPlacement(state.mySeatIndex, false);
   soundEngine.playHappyChime();
   showCenterNotice('🔥 걱정이 모닥불 불꽃 속으로 날아가 반짝이는 별똥별 불티가 되어 사라졌어요!');
 });
@@ -2096,8 +2578,8 @@ setInterval(() => {
   if (el) el.textContent = `${m}:${s}`;
 }, 1000);
 
-// Keyboard Shortcuts (1~8)
-const KEY_MAP = ['log', 'hands', 'mallow', 'coffee', 'give', 'sparkler', 'aurora', 'worry'];
+// Keyboard Shortcuts (1~9)
+const KEY_MAP = ['gather', 'log', 'hands', 'mallow', 'coffee', 'give', 'sparkler', 'aurora', 'worry'];
 window.addEventListener('keydown', (e) => {
   if (document.activeElement === worryInput) return;
   const idx = Number(e.key) - 1;
@@ -2107,5 +2589,6 @@ window.addEventListener('keydown', (e) => {
 });
 
 // Initialize
+applySeasonTheme(state.season, false);
 rebuildActiveUsersList();
 animate();
