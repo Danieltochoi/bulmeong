@@ -1,31 +1,35 @@
 /**
- * 🔥 불멍 (BULMEONG) — Immersive 3D Campfire Sanctuary
+ * 🔥 불멍 (BULMEONG) — Photorealistic Procedural 3D Fire & Kid-Friendly Intuitive Actions
  *
- * - Focused 100% on pure Campfire meditation (Inner Peace)
- * - No cluttered 3D floating text tags over logs or heads; clean center notifications only when needed
- * - Large, expressive 3D character with articulated legs & arms
- * - Immersive Over-the-Shoulder / 1st-Person POV looking directly into the crackling fire
- * - Custom GLSL Volumetric Shader flames + rising 3D embers + stacked physical logs
- * - Natural smooth procedural animations for warming hands, placing logs, roasting marshmallows, pouring thermos coffee, and two-handed sharing
- * - Honest real-time online user count (optional AI companion toggleable)
+ * 1. Photorealistic GLSL FBM Volumetric Fire Shader (3D simplex/value noise + blackbody radiation color gradient:
+ *    white-hot 3200K core -> golden yellow 2200K -> blazing orange 1500K -> deep crimson wisps + rising smoke & 120 glowing embers)
+ * 2. Bright, Warm Golden-Hour Forest Campsite (Festival string lights, glowing camp lanterns, warm twilight sky — never too dark!)
+ * 3. Unmistakable, Kid-Friendly 3D Actions with Floating Status Bubbles right above the character:
+ *    - 🪵 장작 넣기: Carries big log in both hands, walks to fire, tosses it in -> huge spark burst & flames roar higher!
+ *    - 🤲 손 녹이기: Stretches big warm hands right near the fire with visible warm heat rings & "🤲 손이 따끈따끈해요!"
+ *    - 🍡 마시멜로 굽기: Holds giant marshmallow right over the fire with live roasting gauge (0% -> 100% golden brown) + "냠냠!" eating animation!
+ *    - ☕ 보온병 코코아: Pours steaming hot cocoa from green thermos into a big mug with rising 3D steam puffs & sipping animation!
+ *    - 🎁 친구에게 주기: Walks over to neighbor and hands over cocoa/marshmallow with two hands & polite bow!
+ *    - 🎇 불꽃놀이: Holds dazzling golden sparkler shooting 3D star sparks in all directions!
+ *    - 🌈 무지개 마법불: Sprinkles magic powder that turns the realistic fire into emerald/violet aurora flames!
  */
 
 // ====================================================
 // 1. IDENTITY & STATE
 // ====================================================
 const ADJECTIVES = [
-  '고요한', '따스한', '평온한', '은은한', '차분한',
-  '깊어가는', '별빛 닮은', '솔향기 나는', '포근한', '잔잔한'
+  '따스한', '포근한', '다정한', '반짝이는', '해맑은',
+  '노릇노릇', '별빛 닮은', '솔향기 나는', '행복한', '든든한'
 ];
 
 const NOUNS = [
-  '모닥불', '솔방울', '장작불', '불씨', '통나무',
-  '산들바람', '보온병', '산장지기', '풀벌레', '여행자'
+  '모닥불', '마시멜로', '솔방울', '장작불', '코코아',
+  '불꽃놀이', '다람쥐', '보온병', '산장지기', '탐험가'
 ];
 
 const CAMPER_COLORS = [
-  '#d96b43', '#5c8072', '#dfa84b', '#6ba2b8',
-  '#a66e7a', '#e08748', '#7fa660', '#8c7aa8'
+  '#ff6b4a', '#4ecdc4', '#ffb703', '#5c9ead',
+  '#f28482', '#fb8500', '#8ac926', '#9b5de5'
 ];
 
 function generateRandomNickname() {
@@ -43,10 +47,10 @@ const state = {
   instance: Number(urlParams.get('instance') || 0),
   region: urlParams.get('region') || 'apac',
   mySeatIndex: 0,
-  myAction: 'hands', // 'hands' | 'mallow' | 'coffee' | 'sparkler' | 'idle'
-  povMode: 'shoulder', // 'shoulder' (내 어깨 너머 몰입) | 'first' (1인칭 불꽃 직관) | 'wide' (전체 둘러보기)
-  enableSoloCompanion: false, // Honest real user count by default!
-  fireHeat: 720,
+  myAction: 'hands', // 'hands' | 'mallow' | 'coffee' | 'sparkler'
+  povMode: 'shoulder', // 'shoulder' (내 캐릭터+불꽃) | 'first' (진짜 불꽃 클로즈업) | 'wide' (캠핑장 전체)
+  enableSoloCompanion: true, // Kid-friendly default: friendly forest companion sits nearby so sharing always works immediately!
+  fireHeat: 750,
   logsAddedCount: 0,
   auroraUntil: 0,
   enteredAt: Date.now(),
@@ -69,10 +73,10 @@ function syncUrlParams() {
 syncUrlParams();
 
 // ====================================================
-// 2. CENTER NOTIFICATION HELPER (CLEAN & UNOBTRUSIVE)
+// 2. CENTER NOTIFICATION HELPER
 // ====================================================
 let noticeTimer = null;
-function showCenterNotice(message, durationMs = 2800) {
+function showCenterNotice(message, durationMs = 3200) {
   const el = document.getElementById('centerNotice');
   const txt = document.getElementById('centerNoticeText');
   if (!el || !txt) return;
@@ -85,13 +89,13 @@ function showCenterNotice(message, durationMs = 2800) {
 }
 
 // ====================================================
-// 3. WEB AUDIO ASMR ENGINE (CRACKLING OAK FIRE & WIND)
+// 3. REALISTIC WEB AUDIO ASMR ENGINE
 // ====================================================
 class CampfireAudioEngine {
   constructor() {
     this.ctx = null;
     this.isMuted = false;
-    this.volumes = { fire: 0.85, wind: 0.4, rain: 0.0, night: 0.5 };
+    this.volumes = { fire: 0.9, wind: 0.35, rain: 0.0, night: 0.45 };
     this.nodes = {};
   }
 
@@ -105,7 +109,7 @@ class CampfireAudioEngine {
     this.ctx = new AudioCtx();
 
     this.masterGain = this.ctx.createGain();
-    this.masterGain.gain.value = 0.9;
+    this.masterGain.gain.value = 0.95;
     this.masterGain.connect(this.ctx.destination);
 
     const bufferSize = this.ctx.sampleRate * 3;
@@ -119,31 +123,31 @@ class CampfireAudioEngine {
       output[i] *= 3.2;
     }
 
-    // 1. Deep Warm Hearth Rumble
+    // 1. Deep Warm Hearth Flame Roar
     const fireRumble = this.ctx.createBufferSource();
     fireRumble.buffer = noiseBuffer;
     fireRumble.loop = true;
     const fireFilter = this.ctx.createBiquadFilter();
     fireFilter.type = 'lowpass';
-    fireFilter.frequency.value = 165;
+    fireFilter.frequency.value = 185;
     this.nodes.fireGain = this.ctx.createGain();
-    this.nodes.fireGain.gain.value = this.volumes.fire * 0.42;
+    this.nodes.fireGain.gain.value = this.volumes.fire * 0.45;
     fireRumble.connect(fireFilter);
     fireFilter.connect(this.nodes.fireGain);
     this.nodes.fireGain.connect(this.masterGain);
     fireRumble.start();
 
-    // 2. Pine Forest Night Breeze
+    // 2. Forest Breeze
     const windSource = this.ctx.createBufferSource();
     windSource.buffer = noiseBuffer;
     windSource.loop = true;
     const windFilter = this.ctx.createBiquadFilter();
     windFilter.type = 'bandpass';
     windFilter.frequency.value = 320;
-    windFilter.Q.value = 4.2;
+    windFilter.Q.value = 4.0;
     this.nodes.windFilter = windFilter;
     this.nodes.windGain = this.ctx.createGain();
-    this.nodes.windGain.gain.value = this.volumes.wind * 0.24;
+    this.nodes.windGain.gain.value = this.volumes.wind * 0.22;
     windSource.connect(windFilter);
     windFilter.connect(this.nodes.windGain);
     this.nodes.windGain.connect(this.masterGain);
@@ -164,84 +168,66 @@ class CampfireAudioEngine {
     this.nodes.rainGain.connect(this.masterGain);
     rainSource.start();
 
-    setInterval(() => this.triggerCrackleAndNight(), 110);
+    setInterval(() => this.triggerCrackleAndNight(), 95);
   }
 
   triggerCrackleAndNight() {
     if (!this.ctx || this.isMuted) return;
     const now = this.ctx.currentTime;
 
-    if (this.nodes.windFilter) {
-      this.nodes.windFilter.frequency.setTargetAtTime(250 + Math.sin(now * 0.3) * 90, now, 0.3);
-    }
-
-    // Crisp Oak Firewood Pop & Crackle
-    if (this.volumes.fire > 0.02 && Math.random() < 0.36) {
+    // Crisp Oak Firewood Pop & Snap
+    if (this.volumes.fire > 0.02 && Math.random() < 0.42) {
       const osc = this.ctx.createOscillator();
       const gain = this.ctx.createGain();
       const filter = this.ctx.createBiquadFilter();
       filter.type = 'highpass';
-      filter.frequency.value = 1350 + Math.random() * 2000;
+      filter.frequency.value = 1200 + Math.random() * 2200;
       osc.type = 'triangle';
-      osc.frequency.setValueAtTime(170 + Math.random() * 550, now);
-      osc.frequency.exponentialRampToValueAtTime(42, now + 0.035);
-      const amp = (0.03 + Math.random() * 0.055) * this.volumes.fire;
+      osc.frequency.setValueAtTime(190 + Math.random() * 600, now);
+      osc.frequency.exponentialRampToValueAtTime(45, now + 0.038);
+      const amp = (0.035 + Math.random() * 0.06) * this.volumes.fire;
       gain.gain.setValueAtTime(amp, now);
-      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.042);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.044);
       osc.connect(filter);
       filter.connect(gain);
       gain.connect(this.masterGain);
       osc.start(now);
-      osc.stop(now + 0.045);
-    }
-
-    // Distant Night Cricket
-    if (this.volumes.night > 0.05 && Math.random() < 0.07) {
-      const cOsc = this.ctx.createOscillator();
-      const cGain = this.ctx.createGain();
-      cOsc.type = 'sine';
-      cOsc.frequency.setValueAtTime(3850 + Math.random() * 180, now);
-      const cAmp = 0.009 * this.volumes.night;
-      cGain.gain.setValueAtTime(0.0001, now);
-      cGain.gain.linearRampToValueAtTime(cAmp, now + 0.02);
-      cGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.13);
-      cOsc.connect(cGain);
-      cGain.connect(this.masterGain);
-      cOsc.start(now);
-      cOsc.stop(now + 0.14);
+      osc.stop(now + 0.048);
     }
   }
 
-  playWoodThud() {
+  playWoodRoar() {
     if (!this.ctx || this.isMuted) return;
     const now = this.ctx.currentTime;
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
     osc.type = 'sine';
-    osc.frequency.setValueAtTime(135, now);
-    osc.frequency.exponentialRampToValueAtTime(38, now + 0.14);
-    gain.gain.setValueAtTime(0.18 * this.volumes.fire, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
+    osc.frequency.setValueAtTime(150, now);
+    osc.frequency.exponentialRampToValueAtTime(40, now + 0.22);
+    gain.gain.setValueAtTime(0.25 * this.volumes.fire, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
     osc.connect(gain);
     gain.connect(this.masterGain);
     osc.start(now);
-    osc.stop(now + 0.17);
+    osc.stop(now + 0.26);
   }
 
-  playWarmBell() {
+  playHappyChime() {
     if (!this.ctx || this.isMuted) return;
     const now = this.ctx.currentTime;
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(432, now);
-    gain.gain.setValueAtTime(0.0001, now);
-    gain.gain.linearRampToValueAtTime(0.05, now + 0.15);
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + 3.2);
-    osc.connect(gain);
-    gain.connect(this.masterGain);
-    osc.start(now);
-    osc.stop(now + 3.3);
+    [523.25, 659.25, 783.99].forEach((freq, idx) => {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, now + idx * 0.09);
+      gain.gain.setValueAtTime(0.0001, now + idx * 0.09);
+      gain.gain.linearRampToValueAtTime(0.05, now + idx * 0.09 + 0.04);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + idx * 0.09 + 1.2);
+      osc.connect(gain);
+      gain.connect(this.masterGain);
+      osc.start(now + idx * 0.09);
+      osc.stop(now + idx * 0.09 + 1.25);
+    });
   }
 
   setVolume(channel, val0to100) {
@@ -249,15 +235,15 @@ class CampfireAudioEngine {
     this.volumes[channel] = v;
     if (!this.ctx) return;
     const now = this.ctx.currentTime;
-    if (channel === 'fire' && this.nodes.fireGain) this.nodes.fireGain.gain.setTargetAtTime(v * 0.42, now, 0.1);
-    if (channel === 'wind' && this.nodes.windGain) this.nodes.windGain.gain.setTargetAtTime(v * 0.24, now, 0.1);
+    if (channel === 'fire' && this.nodes.fireGain) this.nodes.fireGain.gain.setTargetAtTime(v * 0.45, now, 0.1);
+    if (channel === 'wind' && this.nodes.windGain) this.nodes.windGain.gain.setTargetAtTime(v * 0.22, now, 0.1);
     if (channel === 'rain' && this.nodes.rainGain) this.nodes.rainGain.gain.setTargetAtTime(v * 0.35, now, 0.1);
   }
 
   toggleMute() {
     this.isMuted = !this.isMuted;
     if (this.ctx && this.masterGain) {
-      this.masterGain.gain.setTargetAtTime(this.isMuted ? 0 : 0.9, this.ctx.currentTime, 0.1);
+      this.masterGain.gain.setTargetAtTime(this.isMuted ? 0 : 0.95, this.ctx.currentTime, 0.1);
     }
     return this.isMuted;
   }
@@ -266,29 +252,31 @@ class CampfireAudioEngine {
 const soundEngine = new CampfireAudioEngine();
 
 // ====================================================
-// 4. THREE.JS 3D CAMPFIRE SANCTUARY (SHADER FLAMES & CLOSE POV)
+// 4. THREE.JS BRIGHT & COZY CAMPSITE + PHOTOREALISTIC FIRE
 // ====================================================
 const canvas = document.getElementById('campfireCanvas');
+const bubbleContainer = document.getElementById('actionBubbleContainer');
+
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.12;
+renderer.toneMappingExposure = 1.38; // Bright, vibrant, warm exposure!
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x09070c);
-scene.fog = new THREE.FogExp2(0x09070c, 0.022);
+// Warm Twilight Indigo-Amber Sky (Never pitch-black!)
+scene.background = new THREE.Color(0x1b192e);
+scene.fog = new THREE.FogExp2(0x1b192e, 0.014);
 
 const camera = new THREE.PerspectiveCamera(42, window.innerWidth / window.innerHeight, 0.1, 160);
 
-// Smooth Camera Controller (Supports Over-the-Shoulder 1st-Person Feel + Free Orbit)
 const camControl = {
-  orbitOffset: 0.0, // User drag offset around the fire
+  orbitOffset: 0.0,
   pitchOffset: 0.0,
   zoomOffset: 0.0,
-  currentPos: new THREE.Vector3(0, 2.3, 6.2),
+  currentPos: new THREE.Vector3(0, 2.2, 5.8),
   currentLookAt: new THREE.Vector3(0, 1.05, 0),
   isDragging: false,
   dragMoved: false,
@@ -296,88 +284,135 @@ const camControl = {
   lastY: 0
 };
 
-// Lighting
-const hemiLight = new THREE.HemisphereLight(0x282238, 0x140d08, 0.45);
+// --- BRIGHT, COZY CAMPSITE LIGHTING ---
+// 1. Warm Sky + Earth Hemisphere Light
+const hemiLight = new THREE.HemisphereLight(0x6b78b4, 0x4d3522, 1.15);
 scene.add(hemiLight);
 
-const fireLight = new THREE.PointLight(0xff7722, 3.6, 24, 1.4);
-fireLight.position.set(0, 1.5, 0);
+// 2. Warm Sunset/Moon Rim Light so characters & trees are always clearly visible
+const rimLight = new THREE.DirectionalLight(0xffdcb8, 0.75);
+rimLight.position.set(12, 22, 14);
+scene.add(rimLight);
+
+// 3. Intense Real-Time Fire Point Light
+const fireLight = new THREE.PointLight(0xff8024, 5.2, 34, 1.25);
+fireLight.position.set(0, 1.65, 0);
 fireLight.castShadow = true;
 fireLight.shadow.mapSize.width = 1024;
 fireLight.shadow.mapSize.height = 1024;
 fireLight.shadow.bias = -0.001;
 scene.add(fireLight);
 
-const emberGlowLight = new THREE.PointLight(0xff3b00, 1.8, 9, 1.8);
-emberGlowLight.position.set(0, 0.35, 0);
-scene.add(emberGlowLight);
+// 4. Secondary Low Ember Bounce Light (illuminates faces, hands, and boots warmly)
+const bounceLight = new THREE.PointLight(0xffaa44, 2.6, 16, 1.4);
+bounceLight.position.set(0, 0.55, 0);
+scene.add(bounceLight);
 
-// Ground Clearing
-const groundMat = new THREE.MeshStandardMaterial({ color: 0x16110e, roughness: 0.96, metalness: 0.02 });
+// Warm Forest Ground with Golden Firelight Reflection Ring
+const groundMat = new THREE.MeshStandardMaterial({ color: 0x33271e, roughness: 0.88, metalness: 0.04 });
 const groundMesh = new THREE.Mesh(new THREE.CircleGeometry(65, 64), groundMat);
 groundMesh.rotation.x = -Math.PI / 2;
 groundMesh.receiveShadow = true;
 scene.add(groundMesh);
 
-// Subtle Starry Night Sky Dome
+// Warm Sandy Hearth Circle around the fire
+const hearthSandMesh = new THREE.Mesh(
+  new THREE.CircleGeometry(5.5, 48),
+  new THREE.MeshStandardMaterial({ color: 0x4a3626, roughness: 0.9 })
+);
+hearthSandMesh.rotation.x = -Math.PI / 2;
+hearthSandMesh.position.y = 0.01;
+hearthSandMesh.receiveShadow = true;
+scene.add(hearthSandMesh);
+
+// Cozy Camping String Lights / Warm Lantern Poles around the clearing
+const lanternGroup = new THREE.Group();
+scene.add(lanternGroup);
+const poleMat = new THREE.MeshStandardMaterial({ color: 0x4a3220, roughness: 0.85 });
+const bulbMat = new THREE.MeshBasicMaterial({ color: 0xffe299 });
+
+for (let i = 0; i < 6; i++) {
+  const a = (i / 6) * Math.PI * 2 + 0.25;
+  const r = 6.4;
+  const px = Math.cos(a) * r;
+  const pz = Math.sin(a) * r;
+
+  const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.07, 2.8, 8), poleMat);
+  pole.position.set(px, 1.4, pz);
+  lanternGroup.add(pole);
+
+  const lanternBulb = new THREE.Mesh(new THREE.SphereGeometry(0.14, 12, 12), bulbMat);
+  lanternBulb.position.set(px, 2.75, pz);
+  lanternGroup.add(lanternBulb);
+}
+
+// Starry Sky
 const starsGeo = new THREE.BufferGeometry();
-const starCount = 900;
+const starCount = 800;
 const starPos = new Float32Array(starCount * 3);
 for (let i = 0; i < starCount; i++) {
   const r = 65 + Math.random() * 25;
   const theta = Math.random() * Math.PI * 2;
   const phi = Math.random() * Math.PI * 0.42;
   starPos[i * 3] = r * Math.sin(phi) * Math.cos(theta);
-  starPos[i * 3 + 1] = r * Math.cos(phi) + 4;
+  starPos[i * 3 + 1] = r * Math.cos(phi) + 5;
   starPos[i * 3 + 2] = r * Math.sin(phi) * Math.sin(theta);
 }
 starsGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
-const starsMat = new THREE.PointsMaterial({ color: 0xffebd6, size: 0.35, transparent: true, opacity: 0.65 });
-const starField = new THREE.Points(starsGeo, starsMat);
-scene.add(starField);
+const starsMat = new THREE.PointsMaterial({ color: 0xfff0d8, size: 0.42, transparent: true, opacity: 0.8 });
+scene.add(new THREE.Points(starsGeo, starsMat));
 
 // ====================================================
-// 4A. DETAILED 3D CAMPFIRE HEARTH & CUSTOM GLSL SHADER FLAMES
+// 4A. PHOTOREALISTIC PROCEDURAL FBM SHADER FIRE ENGINE
 // ====================================================
 const hearthGroup = new THREE.Group();
 scene.add(hearthGroup);
 
 // Stone Ring
-const stoneMat = new THREE.MeshStandardMaterial({ color: 0x3b3532, roughness: 0.92 });
+const stoneMat = new THREE.MeshStandardMaterial({ color: 0x5c524b, roughness: 0.85 });
 for (let i = 0; i < 18; i++) {
   const a = (i / 18) * Math.PI * 2;
-  const sGeo = new THREE.DodecahedronGeometry(0.28 + (i % 3) * 0.05, 1);
-  const stone = new THREE.Mesh(sGeo, stoneMat);
-  stone.position.set(Math.cos(a) * 1.55, 0.14, Math.sin(a) * 1.55);
-  stone.scale.set(1.1, 0.68, 1.0);
+  const stone = new THREE.Mesh(new THREE.DodecahedronGeometry(0.3 + (i % 3) * 0.05, 1), stoneMat);
+  stone.position.set(Math.cos(a) * 1.62, 0.16, Math.sin(a) * 1.62);
+  stone.scale.set(1.15, 0.72, 1.05);
   stone.rotation.y = a;
   stone.castShadow = true;
   stone.receiveShadow = true;
   hearthGroup.add(stone);
 }
 
-// Glowing Charcoal & Ash Bed
-const emberBedMat = new THREE.MeshStandardMaterial({
-  color: 0x2a1108,
-  emissive: 0xff3d00,
-  emissiveIntensity: 1.35,
-  roughness: 0.85
+// Incandescent White-Orange Glowing Coal Bed
+const coalBedMat = new THREE.MeshStandardMaterial({
+  color: 0xff4500,
+  emissive: 0xff5500,
+  emissiveIntensity: 2.2,
+  roughness: 0.7
 });
-const emberBed = new THREE.Mesh(new THREE.CylinderGeometry(1.32, 1.45, 0.18, 24), emberBedMat);
-emberBed.position.y = 0.09;
-hearthGroup.add(emberBed);
+const coalBed = new THREE.Mesh(new THREE.CylinderGeometry(1.42, 1.55, 0.22, 32), coalBedMat);
+coalBed.position.y = 0.1;
+hearthGroup.add(coalBed);
 
-// Base Firewood Logs (Detailed Bark + Glowing Inner Core)
+//Glowing Chunks of Burning Charcoal
+const coalChunkMat = new THREE.MeshBasicMaterial({ color: 0xffaa33 });
+for (let i = 0; i < 24; i++) {
+  const chunk = new THREE.Mesh(new THREE.DodecahedronGeometry(0.11 + Math.random() * 0.08, 0), coalChunkMat);
+  const a = Math.random() * Math.PI * 2;
+  const r = Math.random() * 1.1;
+  chunk.position.set(Math.cos(a) * r, 0.2, Math.sin(a) * r);
+  hearthGroup.add(chunk);
+}
+
+// Base Oak Firewood Logs with Incandescent Burning Undersides
 const barkMat = new THREE.MeshStandardMaterial({
-  color: 0x3e2414,
-  roughness: 0.92,
-  emissive: 0x4a1200,
-  emissiveIntensity: 0.35
+  color: 0x4f2f1a,
+  roughness: 0.88,
+  emissive: 0x802200,
+  emissiveIntensity: 0.65
 });
 const dynamicLogsGroup = new THREE.Group();
 hearthGroup.add(dynamicLogsGroup);
 
-function createFirewoodLogMesh(length = 2.1, radius = 0.14) {
+function createFirewoodLogMesh(length = 2.2, radius = 0.15) {
   const logGroup = new THREE.Group();
   const body = new THREE.Mesh(new THREE.CylinderGeometry(radius * 0.92, radius, length, 12), barkMat);
   body.castShadow = true;
@@ -386,78 +421,139 @@ function createFirewoodLogMesh(length = 2.1, radius = 0.14) {
   return logGroup;
 }
 
-for (let i = 0; i < 7; i++) {
-  const a = (i / 7) * Math.PI * 2;
-  const log = createFirewoodLogMesh(2.15, 0.14);
-  log.position.set(Math.cos(a) * 0.32, 0.34, Math.sin(a) * 0.32);
-  log.rotation.z = Math.cos(a) * 0.56;
-  log.rotation.x = Math.sin(a) * 0.56;
+for (let i = 0; i < 8; i++) {
+  const a = (i / 8) * Math.PI * 2;
+  const log = createFirewoodLogMesh(2.25, 0.15);
+  log.position.set(Math.cos(a) * 0.36, 0.36, Math.sin(a) * 0.36);
+  log.rotation.z = Math.cos(a) * 0.54;
+  log.rotation.x = Math.sin(a) * 0.54;
   hearthGroup.add(log);
 }
 
-// Custom GLSL Volumetric Shader Flame Layers (Organic, Hypnotic Dancing Fire)
-const flameVertexShader = `
+// --- HIGH-TECH GLSL PROCEDURAL FBM VOLUMETRIC FIRE SHADER ---
+// Uses multi-octave procedural noise + cellular flame tongues + Kelvin blackbody radiation curve
+const realisticFireVertexShader = `
   uniform float uTime;
   uniform float uSeed;
   uniform float uHeatScale;
   varying vec2 vUv;
-  varying float vHeight;
+  varying vec3 vLocalPos;
 
   void main() {
     vUv = uv;
     vec3 pos = position;
-    float h = clamp((pos.y + 0.5) / 2.2, 0.0, 1.0);
-    vHeight = h;
+    float h = clamp(uv.y, 0.0, 1.0);
 
-    // Organic wind sway & turbulent lick at higher altitudes
-    float swayX = sin(uTime * 3.8 + h * 4.5 + uSeed) * 0.18 * pow(h, 1.3);
-    float swayZ = cos(uTime * 3.2 + h * 4.0 + uSeed * 1.7) * 0.18 * pow(h, 1.3);
-    float pinch = 1.0 - 0.35 * sin(uTime * 5.5 + h * 6.0 + uSeed) * h;
-
-    pos.x = pos.x * pinch + swayX;
-    pos.z = pos.z * pinch + swayZ;
+    // Organic rising convection wave
+    float waveX = sin(uTime * 4.5 + h * 5.2 + uSeed) * 0.22 * pow(h, 1.4);
+    float waveZ = cos(uTime * 3.9 + h * 4.8 + uSeed * 1.9) * 0.22 * pow(h, 1.4);
+    pos.x += waveX;
+    pos.z += waveZ;
     pos.y *= uHeatScale;
 
+    vLocalPos = pos;
     gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
   }
 `;
 
-const flameFragmentShader = `
-  uniform vec3 uColorCore;
-  uniform vec3 uColorMid;
-  uniform vec3 uColorTip;
-  uniform float uOpacity;
+const realisticFireFragmentShader = `
+  uniform float uTime;
+  uniform float uSeed;
+  uniform float uAurora;
   varying vec2 vUv;
-  varying float vHeight;
+  varying vec3 vLocalPos;
+
+  // High-speed 2D Procedural Hash & Value Noise for Real Flame Turbulence
+  float hash(vec2 p) {
+    p = fract(p * vec2(123.34, 456.21));
+    p += dot(p, p + 45.32);
+    return fract(p.x * p.y);
+  }
+
+  float noise(vec2 p) {
+    vec2 i = floor(p);
+    vec2 f = fract(p);
+    f = f * f * (3.0 - 2.0 * f);
+    float a = hash(i);
+    float b = hash(i + vec2(1.0, 0.0));
+    float c = hash(i + vec2(0.0, 1.0));
+    float d = hash(i + vec2(1.0, 1.0));
+    return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+  }
+
+  // 4-Octave Fractal Brownian Motion (FBM) for Realistic Licking Flame Tongues
+  float fbm(vec2 p) {
+    float v = 0.0;
+    float amp = 0.5;
+    for (int i = 0; i < 4; i++) {
+      v += amp * noise(p);
+      p *= 2.08;
+      amp *= 0.5;
+    }
+    return v;
+  }
 
   void main() {
-    vec3 col = mix(uColorCore, uColorMid, smoothstep(0.0, 0.55, vHeight));
-    col = mix(col, uColorTip, smoothstep(0.5, 1.0, vHeight));
-    float alpha = (1.0 - smoothstep(0.65, 1.0, vHeight)) * uOpacity;
-    gl_FragColor = vec4(col, alpha);
+    float h = clamp(vUv.y, 0.0, 1.0);
+    float radialDist = abs(vUv.x - 0.5) * 2.0;
+
+    // Advect UV upward rapidly to simulate rising hot gas
+    vec2 flowUv = vec2(vUv.x * 3.8 + uSeed, vUv.y * 3.2 - uTime * 3.1);
+    float n1 = fbm(flowUv);
+    float n2 = fbm(flowUv * 1.9 - vec2(0.0, uTime * 2.2));
+    float flameNoise = mix(n1, n2, 0.5);
+
+    // Shape mask: wide at base, tapering & breaking into individual flame tongues at top
+    float taper = mix(0.95, 0.05, pow(h, 0.85));
+    float intensity = (1.0 - smoothstep(taper * 0.3, taper, radialDist * 0.65)) * (1.15 - h * 0.92);
+    intensity += (flameNoise - 0.45) * 0.85 * (1.0 - h * 0.3);
+    intensity = clamp(intensity, 0.0, 1.0);
+
+    // Discard cold outer pixels so flame edges look crisp & organic
+    if (intensity < 0.08) discard;
+
+    // Blackbody Radiation Color Curve (Real Fire Physics)
+    vec3 col;
+    if (uAurora > 0.5) {
+      vec3 deepViolet = vec3(0.32, 0.05, 0.75);
+      vec3 emerald = vec3(0.0, 0.92, 0.68);
+      vec3 cyanCore = vec3(0.88, 1.0, 0.98);
+      col = mix(deepViolet, emerald, smoothstep(0.1, 0.55, intensity));
+      col = mix(col, cyanCore, smoothstep(0.55, 0.92, intensity));
+    } else {
+      vec3 darkCrimson = vec3(0.75, 0.08, 0.01);
+      vec3 blazingOrange = vec3(1.0, 0.38, 0.02);
+      vec3 goldenYellow = vec3(1.0, 0.78, 0.18);
+      vec3 whiteHotCore = vec3(1.0, 0.98, 0.88);
+
+      col = mix(darkCrimson, blazingOrange, smoothstep(0.08, 0.38, intensity));
+      col = mix(col, goldenYellow, smoothstep(0.38, 0.70, intensity));
+      col = mix(col, whiteHotCore, smoothstep(0.70, 0.95, intensity));
+    }
+
+    float alpha = smoothstep(0.08, 0.35, intensity) * (1.0 - pow(h, 2.2)) * 0.88;
+    gl_FragColor = vec4(col * 1.35, alpha);
   }
 `;
 
-const shaderFlames = [];
-for (let i = 0; i < 16; i++) {
-  const radius = 0.52 - (i / 16) * 0.28;
-  const height = 1.55 + (i % 4) * 0.48;
-  const geo = new THREE.ConeGeometry(radius, height, 16, 18, false);
-  geo.translate(0, height * 0.42, 0);
+const fireShaderPlanes = [];
+const NUM_FIRE_VOLUMES = 18;
+for (let i = 0; i < NUM_FIRE_VOLUMES; i++) {
+  const w = 1.65 + (i % 3) * 0.35;
+  const h = 2.45 + (i % 4) * 0.45;
+  const geo = new THREE.ConeGeometry(w * 0.48, h, 20, 24, true);
+  geo.translate(0, h * 0.45, 0);
 
   const uniforms = {
     uTime: { value: 0 },
-    uSeed: { value: i * 1.37 },
+    uSeed: { value: i * 2.17 },
     uHeatScale: { value: 1.0 },
-    uColorCore: { value: new THREE.Color(0xfff7cc) },
-    uColorMid: { value: new THREE.Color(0xff8811) },
-    uColorTip: { value: new THREE.Color(0xd92600) },
-    uOpacity: { value: 0.48 - (i / 16) * 0.18 }
+    uAurora: { value: 0.0 }
   };
 
   const mat = new THREE.ShaderMaterial({
-    vertexShader: flameVertexShader,
-    fragmentShader: flameFragmentShader,
+    vertexShader: realisticFireVertexShader,
+    fragmentShader: realisticFireFragmentShader,
     uniforms,
     transparent: true,
     blending: THREE.AdditiveBlending,
@@ -466,25 +562,38 @@ for (let i = 0; i < 16; i++) {
   });
 
   const mesh = new THREE.Mesh(geo, mat);
-  const a = (i / 16) * Math.PI * 2;
-  const r = (i % 3) * 0.16;
-  mesh.position.set(Math.cos(a) * r, 0.18, Math.sin(a) * r);
+  const a = (i / NUM_FIRE_VOLUMES) * Math.PI * 2;
+  const r = (i % 3) * 0.14;
+  mesh.position.set(Math.cos(a) * r, 0.15, Math.sin(a) * r);
+  mesh.rotation.y = a;
   hearthGroup.add(mesh);
-  shaderFlames.push(mesh);
+  fireShaderPlanes.push(mesh);
 }
 
-// Rising 3D Sparks / Embers Particle System
-const EMBER_COUNT = 85;
+// Bright Inner Core Glow Sphere (Gives intense incandescent heart to the fire)
+const coreGlowMat = new THREE.MeshBasicMaterial({
+  color: 0xffaa33,
+  transparent: true,
+  opacity: 0.42,
+  blending: THREE.AdditiveBlending,
+  depthWrite: false
+});
+const coreGlowSphere = new THREE.Mesh(new THREE.SphereGeometry(0.95, 16, 16), coreGlowMat);
+coreGlowSphere.position.set(0, 0.65, 0);
+hearthGroup.add(coreGlowSphere);
+
+// 120 Rising Glowing Embers / Sparks
+const EMBER_COUNT = 120;
 const emberMeshes = [];
 const emberMatBase = new THREE.MeshBasicMaterial({
-  color: 0xffae42,
+  color: 0xffc44d,
   transparent: true,
-  opacity: 0.9,
+  opacity: 0.95,
   blending: THREE.AdditiveBlending
 });
 
 for (let i = 0; i < EMBER_COUNT; i++) {
-  const sp = new THREE.Mesh(new THREE.SphereGeometry(0.024 + Math.random() * 0.02, 6, 6), emberMatBase.clone());
+  const sp = new THREE.Mesh(new THREE.SphereGeometry(0.026 + Math.random() * 0.022, 6, 6), emberMatBase.clone());
   resetEmberParticle(sp, true);
   hearthGroup.add(sp);
   emberMeshes.push(sp);
@@ -492,25 +601,25 @@ for (let i = 0; i < EMBER_COUNT; i++) {
 
 function resetEmberParticle(sp, randomY = false) {
   const a = Math.random() * Math.PI * 2;
-  const r = Math.random() * 0.85;
-  sp.position.set(Math.cos(a) * r, randomY ? Math.random() * 4.5 : 0.35, Math.sin(a) * r);
+  const r = Math.random() * 0.9;
+  sp.position.set(Math.cos(a) * r, randomY ? Math.random() * 5.0 : 0.3, Math.sin(a) * r);
   sp.userData = {
-    vy: 0.65 + Math.random() * 1.1,
-    swaySpeed: 1.5 + Math.random() * 2.5,
-    swayAmp: 0.004 + Math.random() * 0.008,
+    vy: 0.8 + Math.random() * 1.4,
+    swaySpeed: 1.8 + Math.random() * 2.8,
+    swayAmp: 0.006 + Math.random() * 0.01,
     phase: Math.random() * Math.PI * 2,
-    maxY: 3.2 + Math.random() * 2.8
+    maxY: 3.5 + Math.random() * 3.2
   };
 }
 
-// Surrounding Pine Trees (Placed outside radius 14.5 so they NEVER block the camera!)
-const trunkMat = new THREE.MeshStandardMaterial({ color: 0x261911, roughness: 0.95 });
-const pineLeafMat = new THREE.MeshStandardMaterial({ color: 0x13221a, roughness: 0.88 });
-for (let i = 0; i < 40; i++) {
+// Pine Trees surrounding the campsite (Warmly lit, outside radius 15)
+const trunkMat = new THREE.MeshStandardMaterial({ color: 0x422a1b, roughness: 0.9 });
+const pineLeafMat = new THREE.MeshStandardMaterial({ color: 0x213d2e, roughness: 0.82 });
+for (let i = 0; i < 38; i++) {
   const tree = new THREE.Group();
-  const a = (i / 40) * Math.PI * 2 + (Math.random() - 0.5) * 0.06;
-  const dist = 15.0 + Math.random() * 16;
-  const s = 0.9 + Math.random() * 0.75;
+  const a = (i / 38) * Math.PI * 2 + (Math.random() - 0.5) * 0.06;
+  const dist = 15.2 + Math.random() * 14;
+  const s = 0.95 + Math.random() * 0.7;
   const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.2 * s, 0.32 * s, 2.2 * s, 7), trunkMat);
   trunk.position.y = 1.1 * s;
   tree.add(trunk);
@@ -524,41 +633,40 @@ for (let i = 0; i < 40; i++) {
 }
 
 // ====================================================
-// 5. LOG SEATS AROUND THE CAMPFIRE (CLOSE & COZY, NO FLOATING TEXT!)
+// 5. LOG SEATS AROUND THE CAMPFIRE
 // ====================================================
 const MAX_SEATS = 12;
-const SEAT_RADIUS = 3.55; // Closer to the fire so character feels warm & intimate!
+const SEAT_RADIUS = 3.5;
 const seats = [];
 const seatClickMeshes = [];
 
-const logSeatMat = new THREE.MeshStandardMaterial({ color: 0x3d2617, roughness: 0.88 });
-const logEndMat = new THREE.MeshStandardMaterial({ color: 0x7a5438, roughness: 0.82 });
+const logSeatMat = new THREE.MeshStandardMaterial({ color: 0x593a24, roughness: 0.85 });
+const logEndMat = new THREE.MeshStandardMaterial({ color: 0x996b45, roughness: 0.8 });
 
 for (let i = 0; i < MAX_SEATS; i++) {
   const angle = (i / MAX_SEATS) * Math.PI * 2;
   const x = Math.cos(angle) * SEAT_RADIUS;
   const z = Math.sin(angle) * SEAT_RADIUS;
-  const lookAngle = angle + Math.PI; // Faces center(0,0,0)
+  const lookAngle = angle + Math.PI;
 
   const seatGroup = new THREE.Group();
   seatGroup.position.set(x, 0, z);
   seatGroup.rotation.y = -angle + Math.PI / 2;
   scene.add(seatGroup);
 
-  const bench = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.34, 1.45, 14), logSeatMat);
+  const bench = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 1.5, 14), logSeatMat);
   bench.rotation.z = Math.PI / 2;
-  bench.position.y = 0.34;
+  bench.position.y = 0.35;
   bench.castShadow = true;
   bench.receiveShadow = true;
   seatGroup.add(bench);
 
-  // Wood rings at ends of log
-  const capL = new THREE.Mesh(new THREE.CircleGeometry(0.33, 14), logEndMat);
+  const capL = new THREE.Mesh(new THREE.CircleGeometry(0.34, 14), logEndMat);
   capL.rotation.y = -Math.PI / 2;
-  capL.position.set(-0.726, 0.34, 0);
-  const capR = new THREE.Mesh(new THREE.CircleGeometry(0.33, 14), logEndMat);
+  capL.position.set(-0.751, 0.35, 0);
+  const capR = new THREE.Mesh(new THREE.CircleGeometry(0.34, 14), logEndMat);
   capR.rotation.y = Math.PI / 2;
-  capR.position.set(0.726, 0.34, 0);
+  capR.position.set(0.751, 0.35, 0);
   seatGroup.add(capL, capR);
 
   const hitMesh = new THREE.Mesh(
@@ -574,26 +682,25 @@ for (let i = 0; i < MAX_SEATS; i++) {
 }
 
 // ====================================================
-// 6. LARGE, EXPRESSIVE 3D CAMPER CHARACTER (SMOOTH PROCEDURAL RIG)
+// 6. CUTE, LARGE, KID-FRIENDLY 3D CHARACTER + CLEAR PROPS
 // ====================================================
 const camperMeshes = new Map();
 const camperHitMeshes = [];
 
 function createCamper3D(user) {
   const group = new THREE.Group();
-  // Scale character up by 1.28x so they look prominent, warm, and tangible like the original design!
-  group.scale.setScalar(1.28);
+  group.scale.setScalar(1.32); // Large, friendly character!
 
   const bodyRoot = new THREE.Group();
   group.add(bodyRoot);
 
-  const coatColor = new THREE.Color(user.color || '#d96b43');
-  const coatMat = new THREE.MeshStandardMaterial({ color: coatColor, roughness: 0.72 });
-  const pantsMat = new THREE.MeshStandardMaterial({ color: 0x262c36, roughness: 0.85 });
-  const bootMat = new THREE.MeshStandardMaterial({ color: 0x3b2416, roughness: 0.88 });
-  const skinMat = new THREE.MeshStandardMaterial({ color: 0xffdfc4, roughness: 0.62 });
+  const coatColor = new THREE.Color(user.color || '#ff6b4a');
+  const coatMat = new THREE.MeshStandardMaterial({ color: coatColor, roughness: 0.65 });
+  const pantsMat = new THREE.MeshStandardMaterial({ color: 0x323c4d, roughness: 0.8 });
+  const bootMat = new THREE.MeshStandardMaterial({ color: 0x4f311c, roughness: 0.85 });
+  const skinMat = new THREE.MeshStandardMaterial({ color: 0xffe3c8, roughness: 0.55 });
 
-  // Articulated Legs (Thigh + Knee + Calf + Camping Boots)
+  // Articulated Legs
   function buildLeg(sideSign) {
     const hipPivot = new THREE.Group();
     hipPivot.position.set(sideSign * 0.16, 0.48, 0);
@@ -612,7 +719,7 @@ function createCamper3D(user) {
     calf.castShadow = true;
     kneePivot.add(calf);
 
-    const boot = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.11, 0.25), bootMat);
+    const boot = new THREE.Mesh(new THREE.BoxGeometry(0.17, 0.12, 0.26), bootMat);
     boot.position.set(0, -0.34, 0.05);
     boot.castShadow = true;
     kneePivot.add(boot);
@@ -624,64 +731,75 @@ function createCamper3D(user) {
   const rightLeg = buildLeg(1);
   bodyRoot.add(leftLeg.hipPivot, rightLeg.hipPivot);
 
-  // Cozy Rounded Cloak/Coat Torso
+  // Torso
   const torsoPivot = new THREE.Group();
   torsoPivot.position.set(0, 0.48, 0);
   bodyRoot.add(torsoPivot);
 
-  const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.21, 0.36, 0.76, 16), coatMat);
+  const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.36, 0.76, 16), coatMat);
   torso.position.y = 0.38;
   torso.castShadow = true;
-  torso.receiveShadow = true;
   torsoPivot.add(torso);
 
-  // Knit Scarf
+  // Scarf
   const scarf = new THREE.Mesh(
-    new THREE.TorusGeometry(0.215, 0.068, 10, 18),
-    new THREE.MeshStandardMaterial({ color: 0xf2e4c9, roughness: 0.85 })
+    new THREE.TorusGeometry(0.22, 0.07, 10, 18),
+    new THREE.MeshStandardMaterial({ color: 0xfff0d4, roughness: 0.8 })
   );
   scarf.rotation.x = Math.PI / 2;
   scarf.position.y = 0.76;
   torsoPivot.add(scarf);
 
-  // Head + Warm Beanie Hat
+  // Head + Rosy Cheeks + Beanie
   const headGroup = new THREE.Group();
   headGroup.position.y = 0.98;
   torsoPivot.add(headGroup);
 
-  const head = new THREE.Mesh(new THREE.SphereGeometry(0.255, 18, 18), skinMat);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.26, 18, 18), skinMat);
   head.castShadow = true;
   headGroup.add(head);
 
+  // Cute Eyes & Rosy Cheeks (Visible when turning or in 3/4 view)
+  const eyeMat = new THREE.MeshBasicMaterial({ color: 0x1e1610 });
+  const cheekMat = new THREE.MeshBasicMaterial({ color: 0xff8577, transparent: true, opacity: 0.65 });
+  [-1, 1].forEach((s) => {
+    const eye = new THREE.Mesh(new THREE.SphereGeometry(0.028, 8, 8), eyeMat);
+    eye.position.set(s * 0.085, 0.03, 0.235);
+    headGroup.add(eye);
+    const cheek = new THREE.Mesh(new THREE.SphereGeometry(0.038, 8, 8), cheekMat);
+    cheek.position.set(s * 0.13, -0.03, 0.22);
+    headGroup.add(cheek);
+  });
+
   const beanieMat = new THREE.MeshStandardMaterial({
-    color: coatColor.clone().multiplyScalar(0.62),
-    roughness: 0.9
+    color: coatColor.clone().multiplyScalar(0.75),
+    roughness: 0.85
   });
   const beanie = new THREE.Mesh(
-    new THREE.SphereGeometry(0.27, 18, 14, 0, Math.PI * 2, 0, Math.PI * 0.58),
+    new THREE.SphereGeometry(0.275, 18, 14, 0, Math.PI * 2, 0, Math.PI * 0.58),
     beanieMat
   );
   beanie.position.y = 0.02;
   beanie.rotation.x = -0.12;
   headGroup.add(beanie);
 
-  const pomPom = new THREE.Mesh(new THREE.SphereGeometry(0.065, 10, 10), beanieMat);
-  pomPom.position.set(0, 0.29, -0.04);
+  const pomPom = new THREE.Mesh(new THREE.SphereGeometry(0.072, 10, 10), new THREE.MeshStandardMaterial({ color: 0xfff8eb }));
+  pomPom.position.set(0, 0.3, -0.04);
   headGroup.add(pomPom);
 
-  // Articulated Arms (Shoulder + Upper Arm + Forearm + Hand)
+  // Arms & Big Expressive Hands
   function buildArm(sideSign) {
     const shoulder = new THREE.Group();
-    shoulder.position.set(sideSign * 0.27, 0.68, 0.04);
+    shoulder.position.set(sideSign * 0.28, 0.68, 0.04);
 
-    const upperArm = new THREE.Mesh(new THREE.CylinderGeometry(0.068, 0.058, 0.38, 10), coatMat);
+    const upperArm = new THREE.Mesh(new THREE.CylinderGeometry(0.072, 0.062, 0.42, 10), coatMat);
     upperArm.rotation.x = Math.PI / 2;
-    upperArm.position.set(0, -0.02, 0.18);
+    upperArm.position.set(0, -0.02, 0.2);
     upperArm.castShadow = true;
     shoulder.add(upperArm);
 
-    const hand = new THREE.Mesh(new THREE.SphereGeometry(0.076, 12, 12), skinMat);
-    hand.position.set(0, -0.02, 0.4);
+    const hand = new THREE.Mesh(new THREE.SphereGeometry(0.09, 12, 12), skinMat);
+    hand.position.set(0, -0.02, 0.44);
     hand.castShadow = true;
     shoulder.add(hand);
 
@@ -692,90 +810,116 @@ function createCamper3D(user) {
   const rightArm = buildArm(1);
   torsoPivot.add(leftArm.shoulder, rightArm.shoulder);
 
-  // --- PROPS ATTACHED TO CHARACTER ---
-  // 1. Firewood Log held in both hands (when placing a log onto the fire)
-  const heldLogMesh = createFirewoodLogMesh(0.85, 0.11);
+  // --- CRYSTAL-CLEAR, OVERSIZED 3D PROPS SO KIDS & ADULTS INSTANTLY SEE WHAT IS HAPPENING! ---
+  // 1. Warm Heat Glow Rings around hands when warming hands (손 녹이기 온기 이펙트)
+  const handWarmGlow = new THREE.Mesh(
+    new THREE.RingGeometry(0.12, 0.28, 24),
+    new THREE.MeshBasicMaterial({ color: 0xffaa33, side: THREE.DoubleSide, transparent: true, opacity: 0.55, blending: THREE.AdditiveBlending })
+  );
+  handWarmGlow.position.set(0, 0.56, 0.65);
+  torsoPivot.add(handWarmGlow);
+
+  // 2. Big Firewood Log held in both hands
+  const heldLogMesh = createFirewoodLogMesh(0.95, 0.13);
   heldLogMesh.rotation.z = Math.PI / 2;
-  heldLogMesh.position.set(0, 0.52, 0.48);
+  heldLogMesh.position.set(0, 0.54, 0.52);
   heldLogMesh.visible = false;
   torsoPivot.add(heldLogMesh);
 
-  // 2. Marshmallow Skewers (Reaches right near the flames)
+  // 3. Giant Marshmallow on Skewer (stretches right into the firelight!)
   const mallowGroup = new THREE.Group();
   const skewer = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.012, 0.012, 0.95, 8),
-    new THREE.MeshStandardMaterial({ color: 0xd8a47f })
+    new THREE.CylinderGeometry(0.016, 0.016, 1.15, 8),
+    new THREE.MeshStandardMaterial({ color: 0xe0a96d })
   );
   skewer.rotation.x = Math.PI / 2;
-  skewer.position.z = 0.46;
+  skewer.position.z = 0.55;
   mallowGroup.add(skewer);
 
   const mallowMesh = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.082, 0.082, 0.15, 14),
-    new THREE.MeshStandardMaterial({ color: 0xfffdf9, roughness: 0.45 })
+    new THREE.CylinderGeometry(0.125, 0.125, 0.22, 16), // Big, unmistakable marshmallow!
+    new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.35, emissive: 0x331a00, emissiveIntensity: 0.2 })
   );
   mallowMesh.rotation.x = Math.PI / 2;
-  mallowMesh.position.z = 0.94;
+  mallowMesh.position.z = 1.12;
   mallowGroup.add(mallowMesh);
-  mallowGroup.position.set(0.16, 0.56, 0.34);
+  mallowGroup.position.set(0.16, 0.56, 0.36);
   mallowGroup.visible = false;
   torsoPivot.add(mallowGroup);
 
-  // 3. Thermos Flask & Steaming Coffee Mug
+  // 4. Big Bright Cocoa/Coffee Mug + Rising 3D Steam Puffs
   const coffeeGroup = new THREE.Group();
   const mug = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.082, 0.072, 0.16, 14),
-    new THREE.MeshStandardMaterial({ color: 0xf4eee1, roughness: 0.3 })
+    new THREE.CylinderGeometry(0.11, 0.095, 0.22, 16),
+    new THREE.MeshStandardMaterial({ color: 0xffd166, roughness: 0.25 }) // Cheerful warm yellow camp mug!
   );
   coffeeGroup.add(mug);
-  const coffeeLiquid = new THREE.Mesh(
-    new THREE.CircleGeometry(0.072, 12),
-    new THREE.MeshBasicMaterial({ color: 0x3b2212 })
+  const cocoaTop = new THREE.Mesh(
+    new THREE.CircleGeometry(0.098, 14),
+    new THREE.MeshBasicMaterial({ color: 0x4a2511 })
   );
-  coffeeLiquid.rotation.x = -Math.PI / 2;
-  coffeeLiquid.position.y = 0.072;
-  coffeeGroup.add(coffeeLiquid);
-  coffeeGroup.position.set(0, 0.56, 0.46);
+  cocoaTop.rotation.x = -Math.PI / 2;
+  cocoaTop.position.y = 0.105;
+  coffeeGroup.add(cocoaTop);
+
+  // 3D Rising Steam Rings above the mug
+  const steamRings = [];
+  for (let s = 0; s < 3; s++) {
+    const steam = new THREE.Mesh(
+      new THREE.TorusGeometry(0.045 + s * 0.015, 0.012, 6, 12),
+      new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.65 })
+    );
+    steam.rotation.x = Math.PI / 2;
+    steam.position.y = 0.16 + s * 0.09;
+    coffeeGroup.add(steam);
+    steamRings.push(steam);
+  }
+  coffeeGroup.position.set(0, 0.58, 0.52);
   coffeeGroup.visible = false;
   torsoPivot.add(coffeeGroup);
 
-  // Thermos sitting beside the camper's log
+  // Green Classic Thermos standing beside the camper
   const thermosMesh = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.085, 0.085, 0.34, 12),
-    new THREE.MeshStandardMaterial({ color: 0x2f4f3e, metalness: 0.45, roughness: 0.38 })
+    new THREE.CylinderGeometry(0.095, 0.095, 0.38, 12),
+    new THREE.MeshStandardMaterial({ color: 0x2d6a4f, metalness: 0.4, roughness: 0.35 })
   );
-  thermosMesh.position.set(-0.56, 0.17, 0.12);
+  thermosMesh.position.set(-0.58, 0.19, 0.14);
   thermosMesh.castShadow = true;
   group.add(thermosMesh);
 
-  // 4. Sparkler (선향불꽃)
+  // 5. Dazzling Sparkler Wand (불꽃놀이 스파클러)
   const sparklerGroup = new THREE.Group();
   const spRod = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.01, 0.01, 0.72, 6),
-    new THREE.MeshBasicMaterial({ color: 0xbbbbbb })
+    new THREE.CylinderGeometry(0.014, 0.014, 0.85, 6),
+    new THREE.MeshBasicMaterial({ color: 0xdddddd })
   );
   spRod.rotation.x = Math.PI / 2.15;
-  spRod.position.z = 0.35;
+  spRod.position.z = 0.42;
   sparklerGroup.add(spRod);
   const spCore = new THREE.Mesh(
-    new THREE.SphereGeometry(0.065, 10, 10),
-    new THREE.MeshBasicMaterial({ color: 0xffea79 })
+    new THREE.OctahedronGeometry(0.11, 1),
+    new THREE.MeshBasicMaterial({ color: 0xfff380 })
   );
-  spCore.position.set(0, -0.04, 0.7);
+  spCore.position.set(0, -0.04, 0.85);
   sparklerGroup.add(spCore);
-  sparklerGroup.position.set(-0.16, 0.56, 0.34);
+  sparklerGroup.position.set(-0.18, 0.58, 0.36);
   sparklerGroup.visible = false;
   torsoPivot.add(sparklerGroup);
 
-  // Hitbox for clicking another camper
+  // Hitbox for clicking camper
   const hitBox = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.5, 0.5, 1.8, 8),
+    new THREE.CylinderGeometry(0.55, 0.55, 1.9, 8),
     new THREE.MeshBasicMaterial({ visible: false })
   );
-  hitBox.position.y = 0.9;
+  hitBox.position.y = 0.95;
   hitBox.userData = { camperId: user.id, seatIndex: user.seatIndex };
   group.add(hitBox);
   camperHitMeshes.push(hitBox);
+
+  // Floating Action Status Bubble (Clear, kid-friendly badge right above the character!)
+  const bubbleEl = document.createElement('div');
+  bubbleEl.className = 'char-action-bubble';
+  bubbleContainer.appendChild(bubbleEl);
 
   scene.add(group);
 
@@ -789,13 +933,16 @@ function createCamper3D(user) {
     rightLeg,
     leftArm,
     rightArm,
+    handWarmGlow,
     heldLogMesh,
     mallowGroup,
     mallowMesh,
     coffeeGroup,
+    steamRings,
     sparklerGroup,
     spCore,
     hitBox,
+    bubbleEl,
     seatIndex: user.seatIndex,
     action: user.action || 'hands',
     name: user.name,
@@ -805,7 +952,7 @@ function createCamper3D(user) {
     offeringUntil: 0,
     offeringGiftType: 'coffee',
     receivingUntil: 0,
-    placingLogState: null, // Smooth 3D walk-to-fire and place-log animation
+    placingLogState: null,
     walkState: null,
     poseBlend: {
       torsoLean: 0.18,
@@ -846,6 +993,7 @@ function syncCampers3D() {
   for (const [id, camper] of camperMeshes.entries()) {
     if (!activeIds.has(id)) {
       scene.remove(camper.group);
+      if (camper.bubbleEl) camper.bubbleEl.remove();
       const idx = camperHitMeshes.indexOf(camper.hitBox);
       if (idx !== -1) camperHitMeshes.splice(idx, 1);
       camperMeshes.delete(id);
@@ -854,9 +1002,10 @@ function syncCampers3D() {
 }
 
 // ====================================================
-// 7. NATURAL 3D FIREWOOD PLACEMENT & SPARK BURST
+// 7. NATURAL 3D FIREWOOD PLACEMENT & ROARING FLAME SURGE
 // ====================================================
 const activeEffects = [];
+let fireRoarSurgeUntil = 0;
 
 function triggerNaturalLogPlacement(fromSeatIndex) {
   let actor = null;
@@ -870,7 +1019,6 @@ function triggerNaturalLogPlacement(fromSeatIndex) {
   const seat = seats[fromSeatIndex] || seats[0];
   if (!actor) return;
 
-  // Stand up with log in both hands, take a step toward the fire edge, lean down to place it gently, and sit back down
   const fireEdgeDist = 1.95;
   const targetX = Math.cos(seat.angle) * fireEdgeDist;
   const targetZ = Math.sin(seat.angle) * fireEdgeDist;
@@ -888,37 +1036,36 @@ function triggerNaturalLogPlacement(fromSeatIndex) {
 }
 
 function addPhysicalLogToFire(angle) {
-  // Keep up to 10 extra stacked logs on the fire so it visibly builds up
   if (dynamicLogsGroup.children.length >= 10) {
-    const oldest = dynamicLogsGroup.children[0];
-    dynamicLogsGroup.remove(oldest);
+    dynamicLogsGroup.remove(dynamicLogsGroup.children[0]);
   }
 
-  const newLog = createFirewoodLogMesh(1.9, 0.13);
-  const r = 0.22 + Math.random() * 0.25;
-  newLog.position.set(Math.cos(angle) * r, 0.42 + dynamicLogsGroup.children.length * 0.04, Math.sin(angle) * r);
+  const newLog = createFirewoodLogMesh(1.95, 0.14);
+  const r = 0.22 + Math.random() * 0.26;
+  newLog.position.set(Math.cos(angle) * r, 0.44 + dynamicLogsGroup.children.length * 0.04, Math.sin(angle) * r);
   newLog.rotation.z = Math.cos(angle) * 0.48 + (Math.random() - 0.5) * 0.2;
   newLog.rotation.x = Math.sin(angle) * 0.48 + (Math.random() - 0.5) * 0.2;
   newLog.rotation.y = Math.random() * Math.PI;
   dynamicLogsGroup.add(newLog);
 
-  soundEngine.playWoodThud();
+  soundEngine.playWoodRoar();
+  fireRoarSurgeUntil = Date.now() + 3500;
 
-  // Burst of golden embers when the log settles onto the coals
-  for (let i = 0; i < 22; i++) {
+  // Spectacular 35-Spark Fountain Burst!
+  for (let i = 0; i < 35; i++) {
     const sp = new THREE.Mesh(
-      new THREE.SphereGeometry(0.032, 6, 6),
-      new THREE.MeshBasicMaterial({ color: 0xffd269, transparent: true, opacity: 1, blending: THREE.AdditiveBlending })
+      new THREE.SphereGeometry(0.042, 6, 6),
+      new THREE.MeshBasicMaterial({ color: 0xffe066, transparent: true, opacity: 1, blending: THREE.AdditiveBlending })
     );
-    sp.position.set((Math.random() - 0.5) * 0.7, 0.45, (Math.random() - 0.5) * 0.7);
+    sp.position.set((Math.random() - 0.5) * 0.8, 0.5, (Math.random() - 0.5) * 0.8);
     scene.add(sp);
-    const vx = (Math.random() - 0.5) * 1.8;
-    const vy = 1.6 + Math.random() * 2.2;
-    const vz = (Math.random() - 0.5) * 1.8;
+    const vx = (Math.random() - 0.5) * 2.4;
+    const vy = 2.2 + Math.random() * 2.8;
+    const vz = (Math.random() - 0.5) * 2.4;
     const born = Date.now();
     activeEffects.push({
       update: (dt) => {
-        const age = (Date.now() - born) / 1100;
+        const age = (Date.now() - born) / 1200;
         if (age >= 1) {
           scene.remove(sp);
           return false;
@@ -934,7 +1081,7 @@ function addPhysicalLogToFire(angle) {
 }
 
 // ====================================================
-// 8. GENTLE TWO-HANDED COFFEE & MARSHMALLOW SHARING
+// 8. GENTLE TWO-HANDED SHARING (COFFEE & MARSHMALLOW)
 // ====================================================
 const giftOfferBanner = document.getElementById('giftOfferBanner');
 const giftOfferIcon = document.getElementById('giftOfferIcon');
@@ -988,14 +1135,14 @@ function animateWalkAndOfferGift(fromSeat, targetSeat, giftType = 'coffee', acto
       if (targetSeat === state.mySeatIndex && fromSeat !== state.mySeatIndex) {
         state.pendingGiftOffer = { fromSeat, giftType, actorName };
         giftOfferIcon.textContent = giftType === 'coffee' ? '☕' : '🍡';
-        const itemLabel = giftType === 'coffee' ? '따뜻한 보온병 커피' : '노릇하게 구운 마시멜로';
-        giftOfferMessage.innerHTML = `<strong>${actorName}</strong>님이 다가와 두 손으로 ${itemLabel}를 건넵니다.`;
+        const itemLabel = giftType === 'coffee' ? '따뜻한 코코아' : '노릇하게 구운 마시멜로';
+        giftOfferMessage.innerHTML = `<strong>${actorName}</strong>님이 다가와 두 손으로 ${itemLabel}를 건넵니다!`;
         giftOfferBanner.classList.remove('hidden');
-        soundEngine.playWarmBell();
+        soundEngine.playHappyChime();
       } else if (!receiver || receiver.id.startsWith('sim_')) {
         setTimeout(() => {
           completeGiftAcceptance(fromSeat, targetSeat, giftType);
-        }, 1500);
+        }, 1600);
       }
     }
   };
@@ -1009,12 +1156,13 @@ function completeGiftAcceptance(fromSeat, targetSeat, giftType = 'coffee') {
     if (c.seatIndex === targetSeat) receiver = c;
   }
 
-  soundEngine.playWarmBell();
+  soundEngine.playHappyChime();
 
   if (receiver) {
-    receiver.receivingUntil = Date.now() + 3200;
-    receiver.nodUntil = Date.now() + 2200;
+    receiver.receivingUntil = Date.now() + 3400;
+    receiver.nodUntil = Date.now() + 2400;
     receiver.action = giftType === 'coffee' ? 'coffee' : 'mallow';
+    receiver.roastStartTime = Date.now() - 10000;
   }
 
   if (giver) {
@@ -1047,7 +1195,7 @@ acceptGiftBtn.addEventListener('click', () => {
   sendServerAction({ type: 'pose', action: state.myAction });
   sendServerAction({ type: 'acceptGift', fromSeat, giftType });
   completeGiftAcceptance(fromSeat, state.mySeatIndex, giftType);
-  showCenterNotice(`${actorName}님의 따뜻한 마음을 두 손으로 받았습니다.`);
+  showCenterNotice(`🙏 ${actorName}님의 따뜻한 선물을 두 손으로 받았습니다!`);
 });
 
 declineGiftBtn.addEventListener('click', () => {
@@ -1056,7 +1204,7 @@ declineGiftBtn.addEventListener('click', () => {
 });
 
 // ====================================================
-// 9. ACTION BUTTON HANDLERS
+// 9. INTUITIVE KID-FRIENDLY ACTION BUTTON HANDLERS
 // ====================================================
 function updateDockActiveButtons() {
   document.querySelectorAll('#dockActionsContainer .action-btn').forEach((btn) => {
@@ -1076,47 +1224,41 @@ function triggerCampfireAction(actionId) {
   const myCamper = camperMeshes.get(state.clientId);
 
   switch (actionId) {
-    case 'hands': {
-      state.myAction = 'hands';
-      updateDockActiveButtons();
-      sendServerAction({ type: 'pose', action: 'hands' });
-      showCenterNotice('모닥불 가까이 두 손을 뻗어 온기를 느낍니다.');
-      break;
-    }
     case 'log': {
       state.logsAddedCount++;
-      state.fireHeat = Math.min(1200, state.fireHeat + 38);
+      state.fireHeat = Math.min(1250, state.fireHeat + 45);
       document.getElementById('logsCountDisplay').textContent = `${state.logsAddedCount}개`;
       document.getElementById('fireTempDisplay').textContent = `${state.fireHeat}°C`;
 
       triggerNaturalLogPlacement(state.mySeatIndex);
       sendServerAction({ type: 'throwLog' });
-      showCenterNotice('장작을 들고 모닥불에 조심스레 얹었습니다.');
+      showCenterNotice('🪵 영차! 큰 장작을 들고 가서 모닥불에 넣습니다. 불꽃이 활짝 커져요!');
+      break;
+    }
+    case 'hands': {
+      state.myAction = 'hands';
+      updateDockActiveButtons();
+      sendServerAction({ type: 'pose', action: 'hands' });
+      showCenterNotice('🤲 모닥불 가까이 두 손을 뻗어 따끈따끈하게 손을 녹여요!');
       break;
     }
     case 'mallow': {
-      state.myAction = state.myAction === 'mallow' ? 'hands' : 'mallow';
+      state.myAction = 'mallow';
       if (myCamper) myCamper.roastStartTime = Date.now();
       updateDockActiveButtons();
-      sendServerAction({ type: 'pose', action: state.myAction });
-      if (state.myAction === 'mallow') {
-        showCenterNotice('불꽃 가까이 마시멜로를 노릇노릇하게 굽습니다.');
-      }
+      sendServerAction({ type: 'pose', action: 'mallow' });
+      showCenterNotice('🍡 커다란 마시멜로를 불꽃에 구워요! 노릇노릇 익어가는 걸 보세요!');
       break;
     }
     case 'coffee': {
-      state.myAction = state.myAction === 'coffee' ? 'hands' : 'coffee';
+      state.myAction = 'coffee';
       updateDockActiveButtons();
-      sendServerAction({ type: 'pose', action: state.myAction });
-      if (state.myAction === 'coffee') {
-        showCenterNotice('보온병에서 따뜻한 커피를 따라 두 손으로 감싸 쥠니다.');
-      }
+      sendServerAction({ type: 'pose', action: 'coffee' });
+      showCenterNotice('☕ 보온병에서 김이 모락모락 나는 달콤한 코코아를 따라 마셔요!');
       break;
     }
     case 'give': {
-      const neighbor = findNearestNeighborCamper(state.mySeatIndex);
-      if (!neighbor) {
-        // Temporarily enable quiet forest companion so solo user can still experience sharing if desired
+      if (state.users.length <= 1) {
         state.enableSoloCompanion = true;
         const toggleEl = document.getElementById('soloCompanionToggle');
         if (toggleEl) toggleEl.checked = true;
@@ -1129,26 +1271,28 @@ function triggerCampfireAction(actionId) {
         sendServerAction({ type: 'offerGift', targetSeat: target.seatIndex, giftType });
         showCenterNotice(
           giftType === 'coffee'
-            ? `${target.name}님에게 다가가 따뜻한 커피를 두 손으로 건넵니다.`
-            : `${target.name}님에게 다가가 구운 마시멜로를 두 손으로 건넵니다.`
+            ? `🎁 옆자리 ${target.name}에게 걸어가 따뜻한 코코아를 두 손으로 건네줘요!`
+            : `🎁 옆자리 ${target.name}에게 걸어가 잘 구운 마시멜로를 두 손으로 건네줘요!`
         );
       }
       break;
     }
     case 'sparkler': {
-      state.myAction = state.myAction === 'sparkler' ? 'hands' : 'sparkler';
+      state.myAction = 'sparkler';
       updateDockActiveButtons();
-      sendServerAction({ type: 'pose', action: state.myAction });
-      if (state.myAction === 'sparkler') {
-        showCenterNotice('타닥타닥 잔잔하게 타오르는 선향불꽃을 바라봅니다.');
-      }
+      sendServerAction({ type: 'pose', action: 'sparkler' });
+      showCenterNotice('🎇 치지직! 반짝반짝 별빛이 튀는 불꽃놀이를 해요!');
       break;
     }
     case 'aurora': {
-      state.auroraUntil = Date.now() + 14000;
+      state.auroraUntil = Date.now() < state.auroraUntil ? 0 : Date.now() + 18000;
       sendServerAction({ type: 'aurora' });
-      soundEngine.playWarmBell();
-      showCenterNotice('신비로운 오로라 불꽃 가루가 모닥불을 물들입니다.');
+      soundEngine.playHappyChime();
+      showCenterNotice(
+        Date.now() < state.auroraUntil
+          ? '🌈 우와! 마법 가루를 뿌려 모닥불이 에메랄드·보라색 오로라 불꽃으로 변했어요!'
+          : '🔥 원래의 따뜻한 황금빛 모닥불로 돌아왔어요!'
+      );
       break;
     }
     case 'worry': {
@@ -1159,12 +1303,24 @@ function triggerCampfireAction(actionId) {
 }
 
 // ====================================================
-// 10. MAIN ANIMATION LOOP (1ST-PERSON / OVER-THE-SHOULDER & SMOOTH RIG)
+// 10. MAIN ANIMATION LOOP
 // ====================================================
 const clock = new THREE.Clock();
 
 function lerp(a, b, t) {
   return a + (b - a) * t;
+}
+
+function projectToScreen(pos3D, domElem) {
+  const v = pos3D.clone().project(camera);
+  if (v.z > 1) {
+    domElem.style.opacity = '0';
+    return;
+  }
+  const x = (v.x * 0.5 + 0.5) * window.innerWidth;
+  const y = (-(v.y * 0.5) + 0.5) * window.innerHeight;
+  domElem.style.left = `${x}px`;
+  domElem.style.top = `${y}px`;
 }
 
 function animate() {
@@ -1176,35 +1332,32 @@ function animate() {
   const mySeat = seats[state.mySeatIndex] || seats[0];
   const baseAngle = mySeat.angle + camControl.orbitOffset;
 
-  // --- CAMERA POV CALCULATION (Focused on MY Character & the Fire!) ---
+  // --- CAMERA POV ---
   const targetCamPos = new THREE.Vector3();
   const targetLookAt = new THREE.Vector3();
 
   if (state.povMode === 'first') {
-    // True 1st-Person POV: Sitting right on my log looking directly into the crackling fire
-    const r = Math.max(1.9, 2.75 + camControl.zoomOffset * 0.4);
+    const r = Math.max(2.1, 2.95 + camControl.zoomOffset * 0.4);
     targetCamPos.set(
       Math.cos(baseAngle) * r,
-      1.32 + camControl.pitchOffset * 0.8,
+      1.35 + camControl.pitchOffset * 0.8,
       Math.sin(baseAngle) * r
     );
-    targetLookAt.set(0, 0.78, 0);
+    targetLookAt.set(0, 0.9, 0);
   } else if (state.povMode === 'shoulder') {
-    // Close Over-the-Shoulder POV (Default): My character is large & clear in foreground, fire fills the center!
-    const distBehind = Math.max(4.6, Math.min(9.5, 5.85 + camControl.zoomOffset));
-    const shoulderSideAngle = baseAngle + 0.11; // Slight offset so character + fire are both framed
+    const distBehind = Math.max(4.5, Math.min(9.2, 5.6 + camControl.zoomOffset));
+    const sideAngle = baseAngle + 0.14;
     targetCamPos.set(
-      Math.cos(shoulderSideAngle) * distBehind,
-      2.18 + camControl.pitchOffset * 1.4,
-      Math.sin(shoulderSideAngle) * distBehind
+      Math.cos(sideAngle) * distBehind,
+      2.22 + camControl.pitchOffset * 1.4,
+      Math.sin(sideAngle) * distBehind
     );
-    targetLookAt.set(0, 0.96, 0);
+    targetLookAt.set(0, 0.98, 0);
   } else {
-    // Wide Campfire Circle POV
-    const distWide = Math.max(7.0, Math.min(13.5, 9.6 + camControl.zoomOffset));
+    const distWide = Math.max(6.8, Math.min(13.0, 9.2 + camControl.zoomOffset));
     targetCamPos.set(
       Math.cos(baseAngle) * distWide,
-      3.8 + camControl.pitchOffset * 1.8,
+      3.7 + camControl.pitchOffset * 1.8,
       Math.sin(baseAngle) * distWide
     );
     targetLookAt.set(0, 1.0, 0);
@@ -1215,48 +1368,43 @@ function animate() {
   camera.position.copy(camControl.currentPos);
   camera.lookAt(camControl.currentLookAt);
 
-  // --- ANIMATE VOLUMETRIC SHADER FLAMES & LIGHT ---
+  // --- ANIMATE PHOTOREALISTIC FBM SHADER FLAMES ---
   const isAurora = now < state.auroraUntil;
-  const heatScale = 0.88 + (state.fireHeat - 650) / 850;
+  const surgeBoost = now < fireRoarSurgeUntil ? 0.38 : 0.0;
+  const heatScale = 0.95 + (state.fireHeat - 680) / 700 + surgeBoost;
 
-  shaderFlames.forEach((mesh, idx) => {
+  fireShaderPlanes.forEach((mesh) => {
     const u = mesh.material.uniforms;
     u.uTime.value = elapsed;
-    u.uHeatScale.value = heatScale;
-
-    if (isAurora) {
-      u.uColorCore.value.setHex(0xd8fff8);
-      u.uColorMid.value.setHex(idx % 2 === 0 ? 0x00d4aa : 0x8a5cf6);
-      u.uColorTip.value.setHex(0x3b096c);
-    } else {
-      u.uColorCore.value.setHex(0xfff7cc);
-      u.uColorMid.value.setHex(0xff8418);
-      u.uColorTip.value.setHex(0xd92600);
-    }
+    u.uHeatScale.value = lerp(u.uHeatScale.value, heatScale, 0.08);
+    u.uAurora.value = isAurora ? 1.0 : 0.0;
   });
 
-  fireLight.color.setHex(isAurora ? 0x48e5c2 : 0xff7722);
-  fireLight.intensity = (3.4 + Math.sin(elapsed * 8.2) * 0.28 + Math.cos(elapsed * 14.5) * 0.16) * heatScale;
-  fireLight.position.x = Math.sin(elapsed * 5.0) * 0.08;
-  fireLight.position.z = Math.cos(elapsed * 4.3) * 0.08;
+  coreGlowMat.color.setHex(isAurora ? 0x00f5d4 : 0xffaa33);
+  coreGlowSphere.scale.setScalar((0.95 + Math.sin(elapsed * 9) * 0.08) * heatScale);
+
+  fireLight.color.setHex(isAurora ? 0x48e5c2 : 0xff8024);
+  fireLight.intensity = (5.0 + Math.sin(elapsed * 8.5) * 0.4 + Math.cos(elapsed * 14.0) * 0.25) * heatScale;
+  fireLight.position.x = Math.sin(elapsed * 5.0) * 0.09;
+  fireLight.position.z = Math.cos(elapsed * 4.3) * 0.09;
 
   // --- ANIMATE RISING EMBERS ---
   emberMeshes.forEach((sp) => {
     const u = sp.userData;
-    sp.position.y += u.vy * dt;
+    sp.position.y += u.vy * dt * (1 + surgeBoost);
     sp.position.x += Math.sin(elapsed * u.swaySpeed + u.phase) * u.swayAmp;
     sp.position.z += Math.cos(elapsed * u.swaySpeed + u.phase) * u.swayAmp;
     const lifeRatio = sp.position.y / u.maxY;
-    sp.material.opacity = Math.max(0, (1 - lifeRatio) * 0.9);
+    sp.material.opacity = Math.max(0, (1 - lifeRatio) * 0.95);
     if (sp.position.y >= u.maxY) {
       resetEmberParticle(sp, false);
     }
   });
 
-  // --- ANIMATE 3D CAMPERS (SMOOTH INTERPOLATION FOR ALL ACTIONS) ---
+  // --- ANIMATE CAMPERS & FLOATING ACTION BUBBLES ---
   for (const camper of camperMeshes.values()) {
-    // Hide my own head/torso only in strict 'first' POV if camera is very close
-    camper.group.visible = !(camper.id === state.clientId && state.povMode === 'first');
+    const isMe = camper.id === state.clientId;
+    camper.group.visible = !(isMe && state.povMode === 'first');
 
     const isWalking = Boolean(camper.walkState && camper.walkState.isWalking);
     const isPlacingLog = Boolean(camper.placingLogState);
@@ -1264,39 +1412,40 @@ function animate() {
     const isReceiving = now < camper.receivingUntil;
     const isNodding = now < camper.nodUntil;
 
-    let targetTorsoLean = 0.06;
+    let targetTorsoLean = 0.08;
     let targetLeftArmX = 0.28;
     let targetLeftArmY = 0.0;
     let targetRightArmX = 0.28;
     let targetRightArmY = 0.0;
-    let targetHeadX = Math.sin(elapsed * 1.1) * 0.035;
+    let targetHeadX = Math.sin(elapsed * 1.2) * 0.04;
 
+    camper.handWarmGlow.visible = false;
     camper.heldLogMesh.visible = false;
     camper.mallowGroup.visible = false;
     camper.coffeeGroup.visible = false;
     camper.sparklerGroup.visible = false;
 
-    // 1. Natural 3D Log Placement Sequence
+    let bubbleHTML = '';
+
+    // 1. Placing Firewood Log Sequence
     if (isPlacingLog) {
       const pls = camper.placingLogState;
       const stepElapsed = (now - pls.startTime) / 1000;
+      bubbleHTML = `🪵 영차! 장작 넣는 중!`;
 
       if (pls.phase === 'walkToFire') {
-        const t = Math.min(1, stepElapsed / 0.75);
+        const t = Math.min(1, stepElapsed / 0.7);
         camper.group.position.x = lerp(pls.startX, pls.targetX, t);
         camper.group.position.z = lerp(pls.startZ, pls.targetZ, t);
         camper.group.rotation.y = pls.lookAngle;
 
-        // Stand up & carry log with both hands
         camper.bodyRoot.position.y = lerp(0, 0.2, t);
-        const swing = Math.sin(elapsed * 11) * 0.35;
+        const swing = Math.sin(elapsed * 11) * 0.38;
         camper.leftLeg.hipPivot.rotation.set(swing, 0, 0);
-        camper.leftLeg.kneePivot.rotation.set(Math.max(0, -swing * 0.5), 0, 0);
         camper.rightLeg.hipPivot.rotation.set(-swing, 0, 0);
-        camper.rightLeg.kneePivot.rotation.set(Math.max(0, swing * 0.5), 0, 0);
 
         camper.heldLogMesh.visible = true;
-        targetTorsoLean = 0.15;
+        targetTorsoLean = 0.16;
         targetLeftArmX = -0.55;
         targetLeftArmY = 0.25;
         targetRightArmX = -0.55;
@@ -1307,9 +1456,9 @@ function animate() {
           pls.startTime = now;
         }
       } else if (pls.phase === 'kneelAndPlace') {
-        const t = Math.min(1, stepElapsed / 0.55);
+        const t = Math.min(1, stepElapsed / 0.5);
         camper.heldLogMesh.visible = t < 0.75;
-        targetTorsoLean = 0.58 * Math.sin(t * Math.PI);
+        targetTorsoLean = 0.6 * Math.sin(t * Math.PI);
         targetLeftArmX = -0.85;
         targetRightArmX = -0.85;
 
@@ -1319,12 +1468,12 @@ function animate() {
           pls.startTime = now;
         }
       } else if (pls.phase === 'returnToSeat') {
-        const t = Math.min(1, stepElapsed / 0.75);
+        const t = Math.min(1, stepElapsed / 0.7);
         camper.group.position.x = lerp(pls.targetX, pls.startX, t);
         camper.group.position.z = lerp(pls.targetZ, pls.startZ, t);
         camper.bodyRoot.position.y = lerp(0.2, 0, t);
 
-        const swing = Math.sin(elapsed * 11) * 0.3;
+        const swing = Math.sin(elapsed * 11) * 0.32;
         camper.leftLeg.hipPivot.rotation.set(swing, 0, 0);
         camper.rightLeg.hipPivot.rotation.set(-swing, 0, 0);
 
@@ -1335,13 +1484,15 @@ function animate() {
         }
       }
     } else if (isWalking) {
-      // 2. Walking to another seat or neighbor
+      // 2. Walking to Neighbor or Seat
       const ws = camper.walkState;
       const dx = ws.targetX - camper.group.position.x;
       const dz = ws.targetZ - camper.group.position.z;
       const dist = Math.hypot(dx, dz);
+      bubbleHTML = `👣 총총 걸어가는 중...`;
+
       if (dist > 0.07) {
-        const step = Math.min(dist, 0.058);
+        const step = Math.min(dist, 0.062);
         camper.group.position.x += (dx / dist) * step;
         camper.group.position.z += (dz / dist) * step;
         camper.group.rotation.y = Math.atan2(dx, dz);
@@ -1352,13 +1503,13 @@ function animate() {
       }
 
       camper.bodyRoot.position.y = lerp(camper.bodyRoot.position.y, 0.2, 0.15);
-      const swing = Math.sin(elapsed * 9.5) * 0.45;
+      const swing = Math.sin(elapsed * 10) * 0.45;
       camper.leftLeg.hipPivot.rotation.set(swing, 0, 0);
       camper.leftLeg.kneePivot.rotation.set(Math.max(0, -swing * 0.6), 0, 0);
       camper.rightLeg.hipPivot.rotation.set(-swing, 0, 0);
       camper.rightLeg.kneePivot.rotation.set(Math.max(0, swing * 0.6), 0, 0);
     } else {
-      // 3. Seated on the Log Bench (Legs bent naturally at knees, boots resting on ground)
+      // 3. Seated on Log Bench
       camper.bodyRoot.position.y = lerp(camper.bodyRoot.position.y, 0.0, 0.12);
       camper.leftLeg.hipPivot.rotation.set(-Math.PI / 2 + 0.08, 0.07, 0);
       camper.leftLeg.kneePivot.rotation.set(Math.PI / 2 - 0.1, 0, 0);
@@ -1373,8 +1524,13 @@ function animate() {
         targetRightArmX = -0.48;
         targetRightArmY = -0.26;
         targetHeadX = 0.2;
-        if (camper.offeringGiftType === 'coffee') camper.coffeeGroup.visible = true;
-        else camper.mallowGroup.visible = true;
+        if (camper.offeringGiftType === 'coffee') {
+          camper.coffeeGroup.visible = true;
+          bubbleHTML = `☕ "따뜻한 코코아 드세요!" 🤲`;
+        } else {
+          camper.mallowGroup.visible = true;
+          bubbleHTML = `🍡 "구운 마시멜로 드세요!" 🤲`;
+        }
       } else if (isReceiving) {
         targetTorsoLean = 0.2;
         targetLeftArmX = -0.42;
@@ -1384,61 +1540,109 @@ function animate() {
         targetHeadX = Math.sin(elapsed * 6) * 0.18 + 0.18;
         camper.coffeeGroup.visible = (camper.action === 'coffee');
         camper.mallowGroup.visible = (camper.action === 'mallow');
+        bubbleHTML = `🙏 "고맙습니다! 잘 먹을게요!" 😊`;
       } else if (camper.action === 'hands') {
-        // Leaning warmly toward the fire, rubbing/warming both hands
-        targetTorsoLean = 0.22 + Math.sin(elapsed * 1.5) * 0.02;
-        const rub = Math.sin(elapsed * 4.2) * 0.065;
-        targetLeftArmX = -0.42 + rub;
-        targetLeftArmY = 0.14;
-        targetRightArmX = -0.42 - rub;
-        targetRightArmY = -0.14;
+        // Warming hands with visible golden warmth rings
+        camper.handWarmGlow.visible = true;
+        camper.handWarmGlow.scale.setScalar(0.85 + Math.sin(elapsed * 5) * 0.18);
+        camper.handWarmGlow.material.opacity = 0.45 + Math.sin(elapsed * 5) * 0.2;
+
+        targetTorsoLean = 0.24 + Math.sin(elapsed * 1.6) * 0.02;
+        const rub = Math.sin(elapsed * 5.0) * 0.085;
+        targetLeftArmX = -0.46 + rub;
+        targetLeftArmY = 0.15;
+        targetRightArmX = -0.46 - rub;
+        targetRightArmY = -0.15;
         targetHeadX = 0.12;
+        if (isMe) bubbleHTML = `🤲 불 가까이 손 녹이는 중 (따끈따끈!)`;
       } else if (camper.action === 'mallow') {
         camper.mallowGroup.visible = true;
-        targetTorsoLean = 0.24;
-        targetRightArmX = -0.38 + Math.sin(elapsed * 2.4) * 0.035;
-        targetRightArmY = -0.08;
-        targetLeftArmX = 0.22;
-        targetHeadX = 0.14;
-        const roastRatio = Math.min(1, (now - camper.roastStartTime) / 11000);
-        camper.mallowMesh.material.color.lerpColors(
-          new THREE.Color(0xfffdf9),
-          new THREE.Color(0xd68334),
-          roastRatio
-        );
+        const roastElapsed = (now - camper.roastStartTime) / 1000;
+        const roastPct = Math.min(100, Math.floor((roastElapsed / 9.0) * 100));
+
+        // When 100% roasted, occasionally bring it to mouth ("냠냠!") then roast a fresh one!
+        const isEating = roastElapsed > 10.5 && roastElapsed < 12.5;
+        if (roastElapsed >= 12.5) {
+          camper.roastStartTime = now;
+        }
+
+        if (isEating) {
+          targetTorsoLean = 0.06;
+          targetRightArmX = -0.78;
+          targetRightArmY = 0.25;
+          camper.mallowGroup.position.set(0.05, 0.75, 0.18);
+          bubbleHTML = `😋 다 구워진 마시멜로 냠냠! 달콤해요!`;
+        } else {
+          targetTorsoLean = 0.24;
+          targetRightArmX = -0.4 + Math.sin(elapsed * 3.0) * 0.04;
+          targetRightArmY = -0.08;
+          camper.mallowGroup.position.set(0.16, 0.56, 0.36);
+
+          const ratio = roastPct / 100;
+          camper.mallowMesh.material.color.lerpColors(
+            new THREE.Color(0xffffff),
+            new THREE.Color(0xd97f2b),
+            ratio
+          );
+          camper.mallowMesh.scale.setScalar(1.0 + ratio * 0.18); // Puffs up as it roasts!
+
+          if (isMe) {
+            bubbleHTML = roastPct < 100
+              ? `🍡 마시멜로 굽기 ${roastPct}% <span class="roast-bar"><span class="roast-fill" style="width:${roastPct}%"></span></span>`
+              : `✨ 노릇노릇 100% 완성! 곧 맛봐요!`;
+          }
+        }
       } else if (camper.action === 'coffee') {
         camper.coffeeGroup.visible = true;
-        const sip = Math.sin(elapsed * 1.25) > 0.72 ? -0.28 : 0.0;
+        // Animate rising 3D steam rings above the mug
+        camper.steamRings.forEach((st, idx) => {
+          const cycle = (elapsed * 0.9 + idx * 0.33) % 1;
+          st.position.y = 0.14 + cycle * 0.32;
+          st.scale.setScalar(0.7 + cycle * 0.8);
+          st.material.opacity = (1 - cycle) * 0.65;
+        });
+
+        const isSipping = Math.sin(elapsed * 1.4) > 0.65;
+        const sipAngle = isSipping ? -0.32 : 0.0;
         targetTorsoLean = 0.08;
-        targetLeftArmX = -0.34 + sip;
+        targetLeftArmX = -0.36 + sipAngle;
         targetLeftArmY = 0.24;
-        targetRightArmX = -0.34 + sip;
+        targetRightArmX = -0.36 + sipAngle;
         targetRightArmY = -0.24;
-        targetHeadX = sip * 0.4 + 0.06;
+        targetHeadX = sipAngle * 0.4 + 0.06;
+        if (isMe) bubbleHTML = isSipping ? `☕ 후루룩~ 따뜻한 코코아 마시는 중!` : `☕ 보온병 코코아 (김이 모락모락~)`;
       } else if (camper.action === 'sparkler') {
         camper.sparklerGroup.visible = true;
         targetTorsoLean = 0.16;
-        targetLeftArmX = -0.35;
-        targetLeftArmY = 0.08;
-        camper.spCore.scale.setScalar(0.8 + Math.random() * 0.65);
+        // Wave sparkler joyfully left and right!
+        const wave = Math.sin(elapsed * 4.5) * 0.28;
+        targetLeftArmX = -0.45 + Math.cos(elapsed * 4.5) * 0.12;
+        targetLeftArmY = wave;
+        camper.spCore.scale.setScalar(0.85 + Math.random() * 0.75);
+        if (isMe) bubbleHTML = `🎇 치지직! 반짝반짝 불꽃놀이 중!`;
 
-        // Emit tiny sparkler sparks
-        if (Math.random() < 0.45) {
+        // Shoot bright multi-colored sparkler stars
+        for (let s = 0; s < 2; s++) {
           const worldTip = new THREE.Vector3();
           camper.spCore.getWorldPosition(worldTip);
+          const sparkColors = [0xfff380, 0xff9f1c, 0xff6b6b, 0x70e000];
           const sp = new THREE.Mesh(
-            new THREE.SphereGeometry(0.018, 4, 4),
-            new THREE.MeshBasicMaterial({ color: 0xffe885, transparent: true, opacity: 1 })
+            new THREE.SphereGeometry(0.025, 4, 4),
+            new THREE.MeshBasicMaterial({
+              color: sparkColors[Math.floor(Math.random() * sparkColors.length)],
+              transparent: true,
+              opacity: 1
+            })
           );
           sp.position.copy(worldTip);
           scene.add(sp);
-          const vx = (Math.random() - 0.5) * 1.1;
-          const vy = (Math.random() - 0.2) * 1.1;
-          const vz = (Math.random() - 0.5) * 1.1;
+          const vx = (Math.random() - 0.5) * 1.8;
+          const vy = (Math.random() - 0.1) * 1.8;
+          const vz = (Math.random() - 0.5) * 1.8;
           const born = Date.now();
           activeEffects.push({
             update: (d) => {
-              const age = (Date.now() - born) / 380;
+              const age = (Date.now() - born) / 420;
               if (age >= 1) {
                 scene.remove(sp);
                 return false;
@@ -1458,25 +1662,35 @@ function animate() {
       targetHeadX = Math.sin(elapsed * 8) * 0.22 + 0.2;
     }
 
-    // Smoothly blend all joint rotations (Zero robotic snapping!)
     const b = camper.poseBlend;
-    b.torsoLean = lerp(b.torsoLean, targetTorsoLean, 0.1);
-    b.leftArmX = lerp(b.leftArmX, targetLeftArmX, 0.12);
-    b.leftArmY = lerp(b.leftArmY, targetLeftArmY, 0.12);
-    b.rightArmX = lerp(b.rightArmX, targetRightArmX, 0.12);
-    b.rightArmY = lerp(b.rightArmY, targetRightArmY, 0.12);
-    b.headX = lerp(b.headX, targetHeadX, 0.12);
+    b.torsoLean = lerp(b.torsoLean, targetTorsoLean, 0.12);
+    b.leftArmX = lerp(b.leftArmX, targetLeftArmX, 0.14);
+    b.leftArmY = lerp(b.leftArmY, targetLeftArmY, 0.14);
+    b.rightArmX = lerp(b.rightArmX, targetRightArmX, 0.14);
+    b.rightArmY = lerp(b.rightArmY, targetRightArmY, 0.14);
+    b.headX = lerp(b.headX, targetHeadX, 0.14);
 
-    // Subtle breathing chest rise
-    const breathScale = 1 + Math.sin(elapsed * 1.8 + camper.seatIndex) * 0.015;
+    const breathScale = 1 + Math.sin(elapsed * 2.0 + camper.seatIndex) * 0.016;
     camper.torsoPivot.scale.set(breathScale, breathScale, breathScale);
     camper.torsoPivot.rotation.x = b.torsoLean;
     camper.leftArm.shoulder.rotation.set(b.leftArmX, b.leftArmY, 0);
     camper.rightArm.shoulder.rotation.set(b.rightArmX, b.rightArmY, 0);
     camper.headGroup.rotation.x = b.headX;
+
+    // Update Floating Action Bubble above the character
+    if (camper.bubbleEl) {
+      if (bubbleHTML && !state.zenMode && camper.group.visible) {
+        camper.bubbleEl.innerHTML = bubbleHTML;
+        const topPos = camper.group.position.clone();
+        topPos.y += 2.35;
+        projectToScreen(topPos, camper.bubbleEl);
+        camper.bubbleEl.style.opacity = '1';
+      } else {
+        camper.bubbleEl.style.opacity = '0';
+      }
+    }
   }
 
-  // Update Active Particle Effects
   for (let i = activeEffects.length - 1; i >= 0; i--) {
     if (!activeEffects[i].update(dt)) {
       activeEffects.splice(i, 1);
@@ -1506,7 +1720,7 @@ window.addEventListener('pointermove', (e) => {
   if (Math.abs(dx) > 3 || Math.abs(dy) > 3) camControl.dragMoved = true;
 
   camControl.orbitOffset -= dx * 0.006;
-  camControl.pitchOffset = Math.max(-0.45, Math.min(0.85, camControl.pitchOffset + dy * 0.004));
+  camControl.pitchOffset = Math.max(-0.4, Math.min(0.85, camControl.pitchOffset + dy * 0.004));
   camControl.lastX = e.clientX;
   camControl.lastY = e.clientY;
 });
@@ -1520,7 +1734,7 @@ window.addEventListener('pointerup', (e) => {
   mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
   raycaster.setFromCamera(mouse, camera);
 
-  // 1. Clicked another camper? -> Walk over and offer coffee or marshmallow
+  // 1. Clicked another camper? -> Walk over and give gift!
   const camperHits = raycaster.intersectObjects(camperHitMeshes, false);
   if (camperHits.length > 0) {
     const hitData = camperHits[0].object.userData;
@@ -1528,22 +1742,18 @@ window.addEventListener('pointerup', (e) => {
       const giftType = state.myAction === 'mallow' ? 'mallow' : 'coffee';
       animateWalkAndOfferGift(state.mySeatIndex, hitData.seatIndex, giftType, state.myNickname);
       sendServerAction({ type: 'offerGift', targetSeat: hitData.seatIndex, giftType });
-      showCenterNotice(
-        giftType === 'coffee'
-          ? '옆 사람에게 다가가 따뜻한 커피를 두 손으로 건넵니다.'
-          : '옆 사람에게 다가가 구운 마시멜로를 두 손으로 건넵니다.'
-      );
+      showCenterNotice('🎁 친구에게 걸어가 두 손으로 선물을 건네줘요!');
       return;
     }
   }
 
-  // 2. Clicked another Log Bench? -> Walk over and sit there
+  // 2. Clicked a Log Bench? -> Move seat
   const seatHits = raycaster.intersectObjects(seatClickMeshes, false);
   if (seatHits.length > 0) {
     const newSeat = seatHits[0].object.userData.seatIndex;
     if (typeof newSeat === 'number' && newSeat !== state.mySeatIndex) {
       state.mySeatIndex = newSeat;
-      camControl.orbitOffset = 0; // Smoothly rotate camera behind new seat!
+      camControl.orbitOffset = 0;
       const myCamper = camperMeshes.get(state.clientId);
       const targetS = seats[newSeat];
       if (myCamper && targetS) {
@@ -1560,7 +1770,7 @@ window.addEventListener('pointerup', (e) => {
       } else {
         sendServerAction({ type: 'moveSeat', seatIndex: newSeat });
       }
-      showCenterNotice('선택한 통나무 자리로 걸어가 앉습니다.');
+      showCenterNotice('👣 선택한 통나무 자리로 총총 걸어가 앉아요!');
     }
   }
 });
@@ -1576,7 +1786,7 @@ window.addEventListener('resize', () => {
 });
 
 // ====================================================
-// 12. REAL-TIME MULTIPLAYER & HONEST USER COUNT
+// 12. REAL-TIME MULTIPLAYER & FRIENDLY COMPANION
 // ====================================================
 let sseSource = null;
 
@@ -1591,19 +1801,18 @@ function rebuildActiveUsersList() {
         color: state.myColor
       }];
 
-  // Online badge ALWAYS displays the exact number of real connected people!
   document.getElementById('onlineCount').textContent = String(realList.length);
 
   if (state.enableSoloCompanion && realList.length === 1) {
-    const companionSeat = (state.mySeatIndex + 2) % MAX_SEATS;
+    const companionSeat = (state.mySeatIndex + 1) % MAX_SEATS; // Sit right next to the user!
     state.users = [
       ...realList,
       {
         id: 'sim_forest_companion',
-        name: '고요한 산장지기 (AI)',
+        name: '다정한 숲속친구',
         seatIndex: companionSeat,
         action: 'coffee',
-        color: '#5c8072'
+        color: '#4ecdc4'
       }
     ];
   } else {
@@ -1663,7 +1872,7 @@ function connectMultiplayerRoom() {
 
 function applyRoomSnapshot(snapshot) {
   if (!snapshot) return;
-  state.fireHeat = snapshot.fireHeat || 720;
+  state.fireHeat = snapshot.fireHeat || 750;
   document.getElementById('fireTempDisplay').textContent = `${state.fireHeat}°C`;
 
   state.realUsers = snapshot.users || [];
@@ -1676,17 +1885,17 @@ function applyRoomSnapshot(snapshot) {
 function handleIncomingRoomEffect(eff) {
   if (!eff) return;
   if (eff.effect === 'throwLog') {
-    state.fireHeat = eff.fireHeat || state.fireHeat + 38;
+    state.fireHeat = eff.fireHeat || state.fireHeat + 45;
     document.getElementById('fireTempDisplay').textContent = `${state.fireHeat}°C`;
     if (eff.fromSeat !== state.mySeatIndex) {
       triggerNaturalLogPlacement(eff.fromSeat);
-      showCenterNotice(`${eff.actorName}님이 모닥불에 장작을 얹었습니다.`);
+      showCenterNotice(`🪵 ${eff.actorName}님이 모닥불에 큰 장작을 넣었어요!`);
     }
   } else if (eff.effect === 'aurora') {
-    state.auroraUntil = Date.now() + 14000;
+    state.auroraUntil = Date.now() + 18000;
     if (eff.fromSeat !== state.mySeatIndex) {
-      soundEngine.playWarmBell();
-      showCenterNotice(`${eff.actorName}님이 오로라 불꽃 가루를 뿌렸습니다.`);
+      soundEngine.playHappyChime();
+      showCenterNotice(`🌈 ${eff.actorName}님이 무지개 마법불 가루를 뿌렸어요!`);
     }
   } else if (eff.effect === 'offerGift') {
     if (eff.fromSeat !== state.mySeatIndex) {
@@ -1695,7 +1904,7 @@ function handleIncomingRoomEffect(eff) {
   } else if (eff.effect === 'acceptGift') {
     if (eff.targetSeat !== state.mySeatIndex) {
       completeGiftAcceptance(eff.fromSeat, eff.targetSeat, eff.giftType);
-      showCenterNotice(`${eff.actorName}님이 따뜻한 선물을 두 손으로 받았습니다.`);
+      showCenterNotice(`🙏 ${eff.actorName}님이 선물을 두 손으로 기쁘게 받았어요!`);
     }
   }
 }
@@ -1719,8 +1928,8 @@ function sendServerAction(payload) {
 // ====================================================
 function applyRoomAtmosphere() {
   const isRain = state.room === 'rain-04';
-  document.getElementById('currentRoomName').textContent = isRain ? '우중 캠핑 모닥불' : '소나무 숲 모닥불';
-  document.getElementById('currentRegionTag').textContent = `${state.region.toUpperCase()} · #${state.instance}`;
+  document.getElementById('currentRoomName').textContent = isRain ? '⛺ 빗소리 캠핑 모닥불' : '🌲 노을빛 소나무 숲';
+  document.getElementById('currentRegionTag').textContent = `채널 #${state.instance}`;
 
   document.querySelectorAll('.room-item').forEach((btn) => {
     btn.classList.toggle('active', btn.dataset.room === state.room);
@@ -1748,10 +1957,10 @@ document.getElementById('enterCampBtn').addEventListener('click', () => {
   document.getElementById('bottomDock').classList.remove('hidden');
   state.enteredAt = Date.now();
   connectMultiplayerRoom();
-  showCenterNotice('타닥거리는 모닥불 앞에 앉았습니다.');
+  showCenterNotice('🔥 따뜻한 모닥불 앞에 앉았어요! 아래 버튼들을 하나씩 눌러보세요!');
 });
 
-// Camera POV Toggle (내 어깨 너머 ↔ 1인칭 불꽃 집중 ↔ 전체 시점)
+// Camera POV Toggle
 const povLabel = document.getElementById('povLabel');
 document.getElementById('cameraPovBtn').addEventListener('click', () => {
   camControl.orbitOffset = 0;
@@ -1760,16 +1969,16 @@ document.getElementById('cameraPovBtn').addEventListener('click', () => {
 
   if (state.povMode === 'shoulder') {
     state.povMode = 'first';
-    povLabel.textContent = '1인칭 불꽃 직관';
-    showCenterNotice('1인칭 시점: 모닥불 바로 앞에서 불꽃에 온전히 집중합니다.');
+    povLabel.textContent = '불꽃 가까이 보기';
+    showCenterNotice('📷 불꽃 가까이 보기: 눈앞에서 타오르는 진짜 불꽃만 가득 채워 봐요!');
   } else if (state.povMode === 'first') {
     state.povMode = 'wide';
-    povLabel.textContent = '모닥불 전체';
-    showCenterNotice('전체 시점: 모닥불 터 전체를 넓게 바라봅니다.');
+    povLabel.textContent = '캠핑장 전체 보기';
+    showCenterNotice('📷 전체 보기: 밝고 아늑한 소나무 숲 캠핑장 전체를 둘러봐요!');
   } else {
     state.povMode = 'shoulder';
-    povLabel.textContent = '내 어깨 너머';
-    showCenterNotice('내 어깨 너머 시점: 내 캐릭터와 모닥불을 함께 바라봅니다.');
+    povLabel.textContent = '내 캐릭터+불꽃';
+    showCenterNotice('📷 내 캐릭터+불꽃 보기: 내 캐릭터가 행동하는 모습과 불꽃을 함께 봐요!');
   }
 });
 
@@ -1779,11 +1988,6 @@ if (soloCompanionToggle) {
   soloCompanionToggle.addEventListener('change', (e) => {
     state.enableSoloCompanion = e.target.checked;
     rebuildActiveUsersList();
-    showCenterNotice(
-      state.enableSoloCompanion
-        ? '조용한 숲속 동행(AI 캠퍼)이 맞은편 통나무에 함께 앉았습니다.'
-        : '혼자만의 고요한 모닥불 시간으로 전환했습니다.'
-    );
   });
 }
 
@@ -1832,7 +2036,7 @@ document.querySelectorAll('#instanceGroup .mini-pill').forEach((btn) => {
 
 document.getElementById('copyRoomLinkBtn').addEventListener('click', () => {
   navigator.clipboard.writeText(window.location.href).then(() => {
-    showCenterNotice('현재 모닥불 주소가 복사되었습니다. 친구에게 공유해 함께 불멍하세요.');
+    showCenterNotice('🔗 모닥불 방 주소가 복사되었어요! 친구에게 보내 함께 앉아보세요!');
   });
 });
 
@@ -1856,16 +2060,16 @@ document.getElementById('muteAllBtn').addEventListener('click', () => {
 const worryInput = document.getElementById('worryInput');
 const worryCount = document.getElementById('worryCount');
 worryInput.addEventListener('input', () => {
-  worryCount.textContent = `${worryInput.value.length} / 120자`;
+  worryCount.textContent = `${worryInput.value.length} / 100자`;
 });
 
 document.getElementById('burnWorrySubmitBtn').addEventListener('click', () => {
   worryInput.value = '';
-  worryCount.textContent = '0 / 120자';
+  worryCount.textContent = '0 / 100자';
   document.getElementById('worryModal').classList.add('hidden');
   triggerNaturalLogPlacement(state.mySeatIndex);
-  soundEngine.playWarmBell();
-  showCenterNotice('적어주신 무거운 고민이 모닥불 불꽃 속에서 조용히 타올라 사라집니다.');
+  soundEngine.playHappyChime();
+  showCenterNotice('🔥 걱정이 모닥불 불꽃 속으로 날아가 반짝이는 별똥별 불티가 되어 사라졌어요!');
 });
 
 // Zen Mode
@@ -1893,7 +2097,7 @@ setInterval(() => {
 }, 1000);
 
 // Keyboard Shortcuts (1~8)
-const KEY_MAP = ['hands', 'log', 'mallow', 'coffee', 'give', 'sparkler', 'aurora', 'worry'];
+const KEY_MAP = ['log', 'hands', 'mallow', 'coffee', 'give', 'sparkler', 'aurora', 'worry'];
 window.addEventListener('keydown', (e) => {
   if (document.activeElement === worryInput) return;
   const idx = Number(e.key) - 1;
@@ -1902,6 +2106,6 @@ window.addEventListener('keydown', (e) => {
   }
 });
 
-// Start 3D Loop
+// Initialize
 rebuildActiveUsersList();
 animate();

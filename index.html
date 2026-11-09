@@ -3,111 +3,114 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>불멍 | 조용히 타오르는 숲속 모닥불</title>
-  <meta name="description" content="설치도, 로그인도, 대화도 필요 없습니다. 조용한 소나무 숲 모닥불 앞에 앉아 타닥거리는 장작불을 바라보며 잠깐 쉬어가세요." />
+  <title>불멍 | 진짜처럼 타오르는 숲속 모닥불</title>
+  <meta name="description" content="누구나 터치 한 번으로 쉽게 즐기는 따뜻한 3D 숲속 모닥불. 진짜 같은 불꽃과 타닥거리는 장작 소리를 느껴보세요." />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Pretendard:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Pretendard:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <!-- Main Interactive WebGL 3D Canvas -->
   <canvas id="campfireCanvas"></canvas>
 
-  <!-- Subtle Ambient Vignette -->
+  <!-- Floating 3D Action Bubble Container (Shows unmistakable big icon + text right above the character!) -->
+  <div id="actionBubbleContainer" class="action-bubble-container"></div>
+
+  <!-- Warm Golden Firelight Vignette (Bright, cozy, never pitch-black) -->
   <div id="ambientOverlay" class="ambient-overlay"></div>
 
-  <!-- Intro / Entry Modal (No login, 1-click entry to unlock Web Audio) -->
+  <!-- Intro / Entry Modal (Kid-friendly, 1-click entry) -->
   <div id="entryOverlay" class="entry-overlay">
     <div class="entry-card">
       <div class="entry-ember-icon">🔥</div>
-      <h1 class="entry-title">불멍, 잠깐 쉬어가요</h1>
-      <p class="entry-subtitle">아무 말 없이 모닥불만 바라봐도 괜찮은 밤입니다</p>
+      <h1 class="entry-title">따뜻한 숲속 불멍</h1>
+      <p class="entry-subtitle">아이도 어른도 버튼만 누르면 쉽게 즐기는 3D 모닥불</p>
       <div class="entry-rules">
-        <div class="rule-item"><span>🔥</span> <strong>온전한 불멍 집중</strong>: 내 캐릭터 너머로 일렁이는 모닥불과 불티에 시선을 맡겨보세요.</div>
-        <div class="rule-item"><span>🤲</span> <strong>자연스러운 3D 교감</strong>: 불 가까이 손을 녹이고, 장작을 얹고, 마시멜로를 노릇하게 구워보세요.</div>
-        <div class="rule-item"><span>☕</span> <strong>조용한 온기 나눔</strong>: 같은 모닥불에 앉은 사람에게 다가가 따뜻한 커피나 마시멜로를 두 손으로 건넬 수 있습니다.</div>
+        <div class="rule-item"><span>🔥</span> <strong>진짜 같은 불꽃</strong>: 장작을 넣으면 불꽃이 활짝 커지고 황금빛 불티가 날아올라요!</div>
+        <div class="rule-item"><span>🍡</span> <strong>마시멜로 & 커피</strong>: 하얀 마시멜로를 노릇노릇하게 굽고, 보온병에서 김이 모락모락 나는 코코아·커피를 따라 마셔요!</div>
+        <div class="rule-item"><span>🎇</span> <strong>불꽃놀이 & 나눔</strong>: 반짝이는 불꽃놀이를 하고 옆 친구에게 걸어가 선물을 건네보세요!</div>
       </div>
       <div class="entry-identity-preview">
-        <span>오늘 밤 당신의 이름:</span>
+        <span>내 캐릭터 이름:</span>
         <strong id="previewNickname">따스한 모닥불</strong>
-        <button id="rerollNameBtn" class="icon-btn" title="다른 이름 받기">↻</button>
+        <button id="rerollNameBtn" class="icon-btn" title="다른 이름 뽑기">🎲</button>
       </div>
-      <button id="enterCampBtn" class="enter-btn">모닥불 앞에 앉기</button>
+      <button id="enterCampBtn" class="enter-btn">🔥 모닥불 켜고 시작하기!</button>
     </div>
   </div>
 
-  <!-- Minimal Top Bar -->
+  <!-- Bright, Intuitive Top Bar -->
   <header class="top-bar hidden" id="topBar">
     <div class="top-left">
-      <button id="roomSelectBtn" class="glass-pill room-pill" title="모닥불 서버 채널 이동">
+      <button id="roomSelectBtn" class="glass-pill room-pill" title="모닥불 채널 바꾸기">
         <span class="status-dot"></span>
-        <span id="currentRoomName">소나무 숲 모닥불</span>
-        <span class="sub-tag" id="currentRegionTag">APAC · #0</span>
+        <span id="currentRoomName">🌲 노을빛 소나무 숲</span>
+        <span class="sub-tag" id="currentRegionTag">채널 #0</span>
         <span class="chevron">▾</span>
       </button>
 
-      <div class="glass-pill presence-pill" title="현재 이 채널에 실제 접속 중인 사람 수">
+      <div class="glass-pill presence-pill" title="현재 함께 모닥불을 보고 있는 사람 수">
         <span>🔥</span>
-        <span>함께 불멍 중 <strong id="onlineCount">1</strong>명</span>
+        <span>함께 불멍 <strong id="onlineCount">1</strong>명</span>
       </div>
     </div>
 
     <div class="top-right">
-      <button id="cameraPovBtn" class="glass-pill pov-pill" title="시점 전환 (1인칭 몰입 시점 ↔ 3인칭 시점)">
-        <span>👁️ 시점:</span>
-        <strong id="povLabel">내 어깨 너머</strong>
+      <button id="cameraPovBtn" class="glass-pill pov-pill" title="카메라 시점 바꾸기">
+        <span>📷 보기:</span>
+        <strong id="povLabel">내 캐릭터+불꽃</strong>
       </button>
       <button id="soundToggleBtn" class="glass-icon-btn" title="장작불 소리 조절">
         🔊
       </button>
-      <button id="zenModeBtn" class="glass-icon-btn" title="UI 모두 숨기고 불꽃만 보기">
+      <button id="zenModeBtn" class="glass-icon-btn" title="버튼 숨기고 불꽃만 크게 보기">
         ✨
       </button>
     </div>
   </header>
 
-  <!-- Center Overlay Notification (Only appears in the center when needed, then fades out cleanly) -->
+  <!-- Live Action Status Pill (Always clearly tells what is happening right now) -->
   <div id="centerNotice" class="center-notice hidden">
-    <span id="centerNoticeText">따뜻한 온기가 피어오릅니다.</span>
+    <span id="centerNoticeText">🔥 모닥불이 따뜻하게 타오릅니다!</span>
   </div>
 
-  <!-- Gentle Incoming Gift Offer Banner (Centered when someone offers coffee or marshmallow) -->
+  <!-- Gentle Incoming Gift Offer Banner -->
   <div id="giftOfferBanner" class="gift-offer-banner hidden">
     <div class="gift-offer-text">
       <span class="gift-offer-icon" id="giftOfferIcon">☕</span>
-      <span id="giftOfferMessage"><strong>다정한 불씨</strong>님이 두 손으로 따뜻한 커피를 건넵니다.</span>
+      <span id="giftOfferMessage"><strong>다정한 불씨</strong>님이 두 손으로 따뜻한 선물을 건넵니다!</span>
     </div>
     <div class="gift-offer-btns">
       <button id="acceptGiftBtn" class="accept-gift-btn">두 손으로 받기 🙏</button>
-      <button id="declineGiftBtn" class="decline-gift-btn">정중히 사양</button>
+      <button id="declineGiftBtn" class="decline-gift-btn">괜찮아요</button>
     </div>
   </div>
 
   <!-- Server Channel Selector Modal -->
   <div id="roomModal" class="floating-panel room-panel hidden">
     <div class="panel-header">
-      <h3>🌲 모닥불 터 & 서버 채널</h3>
+      <h3>🌲 모닥불 채널 & 친구 설정</h3>
       <button class="close-panel-btn" data-close="roomModal">✕</button>
     </div>
-    <p class="panel-desc">원하는 숲속 채널을 선택하거나 친구에게 주소를 공유해 같은 모닥불에 둘러앉으세요.</p>
+    <p class="panel-desc">원하는 숲속 채널을 고르거나 친구에게 주소를 보내 같은 모닥불에 앉아보세요.</p>
 
     <div class="server-Selectors">
       <div class="selector-row">
-        <span class="selector-label">리전(Region)</span>
+        <span class="selector-label">서버 지역</span>
         <div class="pill-group" id="regionGroup">
-          <button class="mini-pill active" data-region="apac">APAC (한국/아시아)</button>
-          <button class="mini-pill" data-region="us">US (미주)</button>
-          <button class="mini-pill" data-region="eu">EU (유럽)</button>
+          <button class="mini-pill active" data-region="apac">한국/아시아</button>
+          <button class="mini-pill" data-region="us">미주</button>
+          <button class="mini-pill" data-region="eu">유럽</button>
         </div>
       </div>
       <div class="selector-row">
-        <span class="selector-label">채널(Instance)</span>
+        <span class="selector-label">채널 번호</span>
         <div class="pill-group" id="instanceGroup">
-          <button class="mini-pill active" data-instance="0">#0 채널</button>
-          <button class="mini-pill" data-instance="1">#1 채널</button>
-          <button class="mini-pill" data-instance="2">#2 채널</button>
-          <button class="mini-pill" data-instance="3">#3 채널</button>
+          <button class="mini-pill active" data-instance="0">#0번 방</button>
+          <button class="mini-pill" data-instance="1">#1번 방</button>
+          <button class="mini-pill" data-instance="2">#2번 방</button>
+          <button class="mini-pill" data-instance="3">#3번 방</button>
         </div>
       </div>
     </div>
@@ -116,16 +119,16 @@
       <button class="room-item active" data-room="fire-01">
         <div class="room-icon">🔥</div>
         <div class="room-info">
-          <strong>소나무 숲 모닥불 터</strong>
-          <span>깊은 밤 소나무 숲 한가운데 타오르는 메인 모닥불</span>
+          <strong>노을빛 소나무 숲 모닥불</strong>
+          <span>밝고 포근한 랜턴 불빛 아래 타오르는 메인 모닥불</span>
         </div>
         <div class="room-occupancy" data-occ="fire-01">접속 중</div>
       </button>
       <button class="room-item" data-room="rain-04">
         <div class="room-icon">⛺</div>
         <div class="room-info">
-          <strong>우중 캠핑 · 빗소리 모닥불 터</strong>
-          <span>차분하게 내리는 밤비 소리와 함께 바라보는 모닥불</span>
+          <strong>토독토독 빗소리 캠핑 모닥불</strong>
+          <span>빗소리를 들으며 더욱 아늑하게 즐기는 모닥불</span>
         </div>
         <div class="room-occupancy" data-occ="rain-04">원활</div>
       </button>
@@ -133,53 +136,53 @@
 
     <div class="companion-toggle-row">
       <label class="companion-label">
-        <input type="checkbox" id="soloCompanionToggle" />
-        <span>혼자 있을 때 조용한 숲속 동행(AI 캠퍼 1명) 함께 앉히기</span>
+        <input type="checkbox" id="soloCompanionToggle" checked />
+        <span>혼자 있을 때 옆자리에 다정한 숲속 친구(AI) 함께 앉히기</span>
       </label>
     </div>
 
     <div class="share-room-footer">
-      <button id="copyRoomLinkBtn" class="secondary-btn">🔗 현재 모닥불 주소 복사하기 (친구 초대)</button>
+      <button id="copyRoomLinkBtn" class="secondary-btn">🔗 내 모닥불 방 주소 복사하기 (친구 초대)</button>
     </div>
   </div>
 
   <!-- Sound Mixer Panel -->
   <div id="soundModal" class="floating-panel sound-panel hidden">
     <div class="panel-header">
-      <h3>🎧 모닥불 자연의 소리 (ASMR)</h3>
+      <h3>🎧 모닥불 자연의 소리 조절</h3>
       <button class="close-panel-btn" data-close="soundModal">✕</button>
     </div>
-    <p class="panel-desc">참나무 장작이 타닥거리는 소리와 밤바람 소리를 취향에 맞게 조절하세요.</p>
+    <p class="panel-desc">타닥거리는 장작불 소리와 숲속 소리를 조절해보세요.</p>
     <div class="slider-group">
       <label>
-        <span>🔥 참나무 장작 타닥거리는 소리</span>
-        <span id="valFire">85%</span>
+        <span>🔥 장작 타닥거리는 소리</span>
+        <span id="valFire">90%</span>
       </label>
-      <input type="range" id="volFire" min="0" max="100" value="85" />
+      <input type="range" id="volFire" min="0" max="100" value="90" />
     </div>
     <div class="slider-group">
       <label>
-        <span>🍃 솔숲 밤바람 소리</span>
-        <span id="valWind">40%</span>
+        <span>🍃 솔숲 바람 소리</span>
+        <span id="valWind">35%</span>
       </label>
-      <input type="range" id="volWind" min="0" max="100" value="40" />
+      <input type="range" id="volWind" min="0" max="100" value="35" />
     </div>
     <div class="slider-group">
       <label>
-        <span>🌧️ 밤비 내리는 소리</span>
+        <span>🌧️ 빗방울 소리</span>
         <span id="valRain">0%</span>
       </label>
       <input type="range" id="volRain" min="0" max="100" value="0" />
     </div>
     <div class="slider-group">
       <label>
-        <span>🦗 풀벌레 & 싱잉볼 명상음</span>
-        <span id="valNight">50%</span>
+        <span>🦗 풀벌레 & 맑은 풍경 소리</span>
+        <span id="valNight">45%</span>
       </label>
-      <input type="range" id="volNight" min="0" max="100" value="50" />
+      <input type="range" id="volNight" min="0" max="100" value="45" />
     </div>
     <div class="sound-footer">
-      <button id="muteAllBtn" class="secondary-btn">전체 음소거 토글</button>
+      <button id="muteAllBtn" class="secondary-btn">🔇 소리 끄기 / 켜기</button>
     </div>
   </div>
 
@@ -187,80 +190,80 @@
   <div id="worryModal" class="modal-backdrop hidden">
     <div class="worry-card">
       <div class="panel-header">
-        <h3>📜 모닥불에 고민 태워 보내기</h3>
+        <h3>📜 모닥불에 고민 태워 날리기</h3>
         <button class="close-panel-btn" data-close="worryModal">✕</button>
       </div>
       <p class="worry-desc">
-        적어주신 내용은 어디에도 저장되지 않으며, 모닥불 불꽃 속으로 조용히 타올라 재가 되어 사라집니다.
+        속상했던 일이나 잊고 싶은 고민을 적어보세요. 종이비행기가 되어 모닥불 불꽃 속으로 날아가 반짝이며 사라집니다!
       </p>
-      <textarea id="worryInput" maxlength="120" placeholder="오늘 밤 훌훌 털어버리고 싶은 생각이나 걱정을 적어보세요..."></textarea>
+      <textarea id="worryInput" maxlength="100" placeholder="여기에 고민이나 소원을 적어보세요..."></textarea>
       <div class="worry-footer">
-        <span id="worryCount">0 / 120자</span>
-        <button id="burnWorrySubmitBtn" class="primary-fire-btn">불꽃에 태워 보내기 🔥</button>
+        <span id="worryCount">0 / 100자</span>
+        <button id="burnWorrySubmitBtn" class="primary-fire-btn">🔥 불꽃 속으로 날리기!</button>
       </div>
     </div>
   </div>
 
   <!-- Zen Mode Exit Button -->
-  <button id="exitZenBtn" class="exit-zen-btn hidden">화면을 터치해 메뉴 다시 보기</button>
+  <button id="exitZenBtn" class="exit-zen-btn hidden">👆 화면을 눌러 버튼 다시 보기</button>
 
-  <!-- Bottom Campfire Action Dock -->
+  <!-- Kid-Friendly, Crystal-Clear Bottom Action Dock -->
   <nav class="bottom-dock hidden" id="bottomDock">
     <div class="dock-stats">
-      <div class="stat-chip">
-        <span class="stat-label">불꽃 온도</span>
-        <strong id="fireTempDisplay">720°C</strong>
+      <div class="stat-chip fire-power-chip">
+        <span class="stat-label">🔥 불꽃 온도</span>
+        <strong id="fireTempDisplay">750°C</strong>
       </div>
       <div class="stat-chip">
-        <span class="stat-label">머문 시간</span>
-        <strong id="stayTimer">00:00</strong>
-      </div>
-      <div class="stat-chip">
-        <span class="stat-label">올린 장작</span>
+        <span class="stat-label">🪵 넣은 장작</span>
         <strong id="logsCountDisplay">0개</strong>
+      </div>
+      <div class="stat-chip">
+        <span class="stat-label">⏱️ 불멍 시간</span>
+        <strong id="stayTimer">00:00</strong>
       </div>
     </div>
 
     <div class="dock-actions" id="dockActionsContainer">
+      <button class="action-btn highlight-btn" data-action="log">
+        <span class="act-icon">🪵</span>
+        <span class="act-label">장작 넣기</span>
+        <span class="act-sub">불꽃 키우기!</span>
+      </button>
       <button class="action-btn active-pose" data-action="hands">
         <span class="act-icon">🤲</span>
         <span class="act-label">손 녹이기</span>
-        <span class="act-key">1</span>
-      </button>
-      <button class="action-btn" data-action="log">
-        <span class="act-icon">🪵</span>
-        <span class="act-label">장작 넣기</span>
-        <span class="act-key">2</span>
+        <span class="act-sub">따끈따끈 온기</span>
       </button>
       <button class="action-btn" data-action="mallow">
         <span class="act-icon">🍡</span>
         <span class="act-label">마시멜로 굽기</span>
-        <span class="act-key">3</span>
+        <span class="act-sub">노릇노릇 냠냠</span>
       </button>
       <button class="action-btn" data-action="coffee">
         <span class="act-icon">☕</span>
-        <span class="act-label">보온병 커피</span>
-        <span class="act-key">4</span>
+        <span class="act-label">보온병 코코아</span>
+        <span class="act-sub">김이 모락모락</span>
       </button>
       <button class="action-btn" data-action="give">
         <span class="act-icon">🎁</span>
-        <span class="act-label">옆사람 건네기</span>
-        <span class="act-key">5</span>
+        <span class="act-label">친구에게 주기</span>
+        <span class="act-sub">두 손으로 전달</span>
       </button>
       <button class="action-btn" data-action="sparkler">
         <span class="act-icon">🎇</span>
-        <span class="act-label">선향불꽃</span>
-        <span class="act-key">6</span>
+        <span class="act-label">불꽃놀이</span>
+        <span class="act-sub">반짝반짝 스파클러</span>
       </button>
-      <button class="action-btn" data-action="aurora">
-        <span class="act-icon">✨</span>
-        <span class="act-label">오로라 가루</span>
-        <span class="act-key">7</span>
+      <button class="action-btn special-btn" data-action="aurora">
+        <span class="act-icon">🌈</span>
+        <span class="act-label">무지개 마법불</span>
+        <span class="act-sub">신비한 오로라불</span>
       </button>
       <button class="action-btn" data-action="worry">
         <span class="act-icon">📜</span>
         <span class="act-label">고민 태우기</span>
-        <span class="act-key">8</span>
+        <span class="act-sub">훨훨 날려보내기</span>
       </button>
     </div>
   </nav>
