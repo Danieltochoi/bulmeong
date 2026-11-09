@@ -28,8 +28,8 @@
       <p class="entry-subtitle">나무를 모아 불을 피우고, 사냥해서 꼬치를 구워요!</p>
       <div class="entry-rules">
         <div class="rule-item"><span>🌿</span> <strong>나무 줍기 → 불 피우기</strong>: 나무를 주워 모닥불을 활활 피워요.</div>
-        <div class="rule-item"><span>🏹</span> <strong>사냥 → 꼬치구이 & 코인</strong>: 멧돼지·토끼·꿩을 잡아 바비큐 꼬치를 굽고 코인(🪙)을 모아요!</div>
-        <div class="rule-item"><span>⛺</span> <strong>내 텐트 꾸미기</strong>: 기본 텐트를 멋진 글램핑 텐트로 업그레이드해요!</div>
+        <div class="rule-item"><span>🏹</span> <strong>사냥 → 꼬치 끼우기 → 굽기</strong>: 귀여운 숲속 동물을 사냥해 생고기를 얻고, 직접 꼬치에 쏙쏙 끼워 구워 먹어요!</div>
+        <div class="rule-item"><span>🥾</span> <strong>숲속 멀리 탐험 & 텐트 휴식</strong>: 숲 바닥 어디든 클릭해 멀리 산책하거나, 텐트 안에서 꿀잠 자고 도시락도 먹어요!</div>
       </div>
       <div class="entry-identity-preview">
         <span>내 이름:</span>
@@ -226,11 +226,15 @@
     <div class="dock-stats">
       <div class="stat-chip firewood-bag-chip">
         <span>🌿 나무</span>
-        <strong id="myBranchesDisplay">1개</strong>
+        <strong id="myBranchesDisplay">2개</strong>
+      </div>
+      <div class="stat-chip raw-meat-chip">
+        <span>🥩 생고기</span>
+        <strong id="myRawMeatDisplay">3점</strong>
       </div>
       <div class="stat-chip meat-bag-chip">
-        <span>🍖 고기</span>
-        <strong id="myMeatDisplay">0개</strong>
+        <span>🍢 꼬치</span>
+        <strong id="myMeatDisplay">1개</strong>
       </div>
       <div class="stat-chip coin-bag-chip" id="openTentShopChip" style="cursor:pointer">
         <span>🪙 코인</span>
@@ -255,9 +259,17 @@
         <span class="act-icon">🏹</span>
         <span class="act-label">동물 사냥</span>
       </button>
+      <button class="action-btn make-skewer-btn" data-action="makeSkewer">
+        <span class="act-icon">🍢</span>
+        <span class="act-label">꼬치 끼우기</span>
+      </button>
       <button class="action-btn skewer-btn" data-action="skewer">
         <span class="act-icon">🍖</span>
         <span class="act-label">꼬치 굽기</span>
+      </button>
+      <button class="action-btn explore-btn" data-action="explore">
+        <span class="act-icon">🥾</span>
+        <span class="act-label" id="exploreBtnLabel">멀리 산책하기</span>
       </button>
       <button class="action-btn enter-tent-btn" data-action="enterTent">
         <span class="act-icon" id="enterTentIcon">🏕️</span>

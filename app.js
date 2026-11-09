@@ -106,10 +106,12 @@ const state = {
   region: urlParams.get('region') || 'apac',
   season: 'autumn',
   mySeatIndex: 0,
-  myAction: 'hands', // 'hands' | 'skewer' | 'coffee' | 'sparkler' | 'sleep' | 'bento'
+  myAction: 'hands', // 'hands' | 'makeSkewer' | 'skewer' | 'coffee' | 'sparkler' | 'sleep' | 'bento'
   inTent: false, // true when character is inside their tent!
+  freeRoamPos: null, // { x, z } when character walked far out into the forest!
   myBranches: 2, // Start with 2 branches so user can light the fire right away or gather more!
-  myMeat: Number(localStorage.getItem('bm_meat') || 1),
+  myRawMeat: Number(localStorage.getItem('bm_rawMeat') || 3), // Caught raw meat pieces (3 pieces -> 1 skewer!)
+  myMeat: Number(localStorage.getItem('bm_meat') || 1), // Crafted meat skewers ready to roast!
   myCoins: Number(localStorage.getItem('bm_coins') || 20),
   fireLit: false, // Starts unlit until wood is put in!
   fireHeat: 0,
@@ -133,6 +135,7 @@ sessionStorage.setItem('bm_clientId', state.clientId);
 sessionStorage.setItem('bm_color', state.myColor);
 
 function saveProgress() {
+  localStorage.setItem('bm_rawMeat', String(state.myRawMeat));
   localStorage.setItem('bm_meat', String(state.myMeat));
   localStorage.setItem('bm_coins', String(state.myCoins));
   localStorage.setItem('bm_tentLevel', String(state.tentLevel));
@@ -400,12 +403,21 @@ const bounceLight = new THREE.PointLight(0xffa033, 0.25, 14, 1.5);
 bounceLight.position.set(0, 0.55, 0);
 scene.add(bounceLight);
 
-// Ground & Hearth Sand
+// Ground & Hearth Sand (Expanded to 100m radius so players can walk far out into the deep forest!)
 const groundMat = new THREE.MeshStandardMaterial({ color: 0x291b11, roughness: 0.9, metalness: 0.03 });
-const groundMesh = new THREE.Mesh(new THREE.CircleGeometry(70, 64), groundMat);
+const groundMesh = new THREE.Mesh(new THREE.CircleGeometry(100, 64), groundMat);
 groundMesh.rotation.x = -Math.PI / 2;
 groundMesh.receiveShadow = true;
 scene.add(groundMesh);
+
+// Ground Walk Target Ring Indicator (Shows where you clicked when walking far out!)
+const walkTargetRing = new THREE.Mesh(
+  new THREE.RingGeometry(0.32, 0.48, 24),
+  new THREE.MeshBasicMaterial({ color: 0x72efdd, side: THREE.DoubleSide, transparent: true, opacity: 0.0 })
+);
+walkTargetRing.rotation.x = -Math.PI / 2;
+walkTargetRing.position.y = 0.04;
+scene.add(walkTargetRing);
 
 const hearthSandMat = new THREE.MeshStandardMaterial({ color: 0x3d2a1d, roughness: 0.92 });
 const hearthSandMesh = new THREE.Mesh(new THREE.CircleGeometry(5.2, 48), hearthSandMat);
@@ -414,29 +426,54 @@ hearthSandMesh.position.y = 0.01;
 hearthSandMesh.receiveShadow = true;
 scene.add(hearthSandMesh);
 
-// Outer Path Lantern Poles pushed back to radius 11.8 (Just enough light to see walking/hunting!)
+// Outer Path Lantern Poles (Inner trail at r=12.2 + Deep Forest Exploration trail at r=21.5)
 const lanternGroup = new THREE.Group();
 scene.add(lanternGroup);
 const poleMat = new THREE.MeshStandardMaterial({ color: 0x3d2818, roughness: 0.9 });
 const bulbMat = new THREE.MeshBasicMaterial({ color: 0xffd27d });
 
-for (let i = 0; i < 6; i++) {
-  const a = (i / 6) * Math.PI * 2 + 0.3;
-  const r = 11.8; // Far back along the forest edge!
-  const px = Math.cos(a) * r;
-  const pz = Math.sin(a) * r;
+[12.2, 21.5].forEach((r, ringIdx) => {
+  const count = ringIdx === 0 ? 6 : 8;
+  for (let i = 0; i < count; i++) {
+    const a = (i / count) * Math.PI * 2 + ringIdx * 0.4 + 0.3;
+    const px = Math.cos(a) * r;
+    const pz = Math.sin(a) * r;
 
-  const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.07, 3.0, 8), poleMat);
-  pole.position.set(px, 1.5, pz);
-  lanternGroup.add(pole);
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.07, 3.0, 8), poleMat);
+    pole.position.set(px, 1.5, pz);
+    lanternGroup.add(pole);
 
-  const lanternBulb = new THREE.Mesh(new THREE.SphereGeometry(0.13, 10, 10), bulbMat);
-  lanternBulb.position.set(px, 2.95, pz);
-  lanternGroup.add(lanternBulb);
+    const lanternBulb = new THREE.Mesh(new THREE.SphereGeometry(0.13, 10, 10), bulbMat);
+    lanternBulb.position.set(px, 2.95, pz);
+    lanternGroup.add(lanternBulb);
 
-  const pathLight = new THREE.PointLight(0xffb85c, 0.45, 9, 1.8);
-  pathLight.position.set(px, 2.7, pz);
-  lanternGroup.add(pathLight);
+    const pathLight = new THREE.PointLight(0xffb85c, ringIdx === 0 ? 0.42 : 0.35, 11, 1.8);
+    pathLight.position.set(px, 2.7, pz);
+    lanternGroup.add(pathLight);
+  }
+});
+
+// Cute Glowing Forest Mushrooms & Berry Bushes along the outer forest trails (r = 9m ~ 25m)
+const mushroomStemMat = new THREE.MeshStandardMaterial({ color: 0xfff3d6, roughness: 0.7 });
+const mushroomCapCols = [0xff6b6b, 0xffbe0b, 0x4ecdc4];
+for (let m = 0; m < 22; m++) {
+  const a = (m / 22) * Math.PI * 2 + 0.17;
+  const r = 9.2 + (m % 4) * 3.8;
+  const mGroup = new THREE.Group();
+  const capMat = new THREE.MeshStandardMaterial({
+    color: mushroomCapCols[m % mushroomCapCols.length],
+    emissive: mushroomCapCols[m % mushroomCapCols.length],
+    emissiveIntensity: 0.28,
+    roughness: 0.5
+  });
+  const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.07, 0.22, 8), mushroomStemMat);
+  stem.position.y = 0.11;
+  mGroup.add(stem);
+  const cap = new THREE.Mesh(new THREE.SphereGeometry(0.16, 12, 10, 0, Math.PI * 2, 0, Math.PI * 0.58), capMat);
+  cap.position.y = 0.2;
+  mGroup.add(cap);
+  mGroup.position.set(Math.cos(a) * r, 0, Math.sin(a) * r);
+  scene.add(mGroup);
 }
 
 // Starry Sky
@@ -460,11 +497,12 @@ scene.add(new THREE.Points(starsGeo, new THREE.PointsMaterial({ color: 0xfff0d8,
 const trunkMat = new THREE.MeshStandardMaterial({ color: 0x3b2416, roughness: 0.9 });
 const treeFoliageMeshes = [];
 
-for (let i = 0; i < 40; i++) {
+for (let i = 0; i < 56; i++) {
   const tree = new THREE.Group();
-  const a = (i / 40) * Math.PI * 2 + (Math.random() - 0.5) * 0.06;
-  const dist = 15.8 + Math.random() * 14;
-  const s = 0.95 + Math.random() * 0.75;
+  const a = (i / 56) * Math.PI * 2 + (Math.random() - 0.5) * 0.06;
+  // Scenic mid-forest trees (15~22m) and deep outer forest boundary trees (25~42m)
+  const dist = i % 3 === 0 ? (15.5 + (i % 5) * 1.6) : (24.5 + Math.random() * 16);
+  const s = 0.95 + Math.random() * 0.85;
   const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.2 * s, 0.32 * s, 2.2 * s, 7), trunkMat);
   trunk.position.y = 1.1 * s;
   tree.add(trunk);
@@ -791,9 +829,9 @@ function resetEmberParticle(sp, randomY = false) {
 }
 
 // ====================================================
-// 4C. FORAGEABLE 3D TREE BRANCHES ON THE FOREST FLOOR
+// 4C. FORAGEABLE 3D TREE BRANCHES ON THE FOREST FLOOR (NEAR & FAR)
 // ====================================================
-const MAX_FORAGE_BRANCHES = 10;
+const MAX_FORAGE_BRANCHES = 14;
 const forageBranches = [];
 const forageBranchHitMeshes = [];
 
@@ -812,7 +850,7 @@ for (let i = 0; i < MAX_FORAGE_BRANCHES; i++) {
   itemGroup.add(ring);
 
   const hitBox = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.7, 0.7, 0.9, 8),
+    new THREE.CylinderGeometry(0.75, 0.75, 0.9, 8),
     new THREE.MeshBasicMaterial({ visible: false })
   );
   hitBox.position.y = 0.35;
@@ -821,7 +859,7 @@ for (let i = 0; i < MAX_FORAGE_BRANCHES; i++) {
   forageBranchHitMeshes.push(hitBox);
 
   const angle = (i / MAX_FORAGE_BRANCHES) * Math.PI * 2 + 0.25;
-  const dist = 5.5 + (i % 2) * 1.2;
+  const dist = i < 8 ? (5.5 + (i % 2) * 1.4) : (12.0 + (i % 3) * 3.5);
   const bx = Math.cos(angle) * dist;
   const bz = Math.sin(angle) * dist;
   itemGroup.position.set(bx, 0, bz);
@@ -842,92 +880,219 @@ for (let i = 0; i < MAX_FORAGE_BRANCHES; i++) {
 }
 
 // ====================================================
-// 4D. 3D FOREST ANIMALS FOR HUNTING & SKEWERS (멧돼지 / 산토끼 / 산꿩)
+// 4D. ADORABLE CHUBBY 3D FOREST ANIMALS (아기 산토끼 / 아기 꽃멧돼지 / 아기 꽃사슴 / 아기 산새)
 // ====================================================
 const ANIMAL_TYPES = [
-  { type: 'boar', name: '🐗 산멧돼지', color: 0x5c3d28, scale: 1.0, speed: 0.28 },
-  { type: 'rabbit', name: '🐇 산토끼', color: 0xe6dfd5, scale: 0.75, speed: 0.42 },
-  { type: 'pheasant', name: '🐓 산꿩', color: 0xb85d19, scale: 0.8, speed: 0.35 }
+  { type: 'rabbit', name: '🐇 아기 산토끼', color: 0xfffaf2, bellyColor: 0xffffff, scale: 0.95, speed: 0.38 },
+  { type: 'boar', name: '🐗 아기 꽃멧돼지', color: 0x8d5b3e, bellyColor: 0xb88666, scale: 1.05, speed: 0.28 },
+  { type: 'deer', name: '🦌 아기 꽃사슴', color: 0xd98a4e, bellyColor: 0xffebd6, scale: 1.05, speed: 0.34 },
+  { type: 'pheasant', name: '🐤 아기 산새', color: 0xffb703, bellyColor: 0xfff0b8, scale: 0.9, speed: 0.36 }
 ];
 
-const MAX_ANIMALS = 6;
+const MAX_ANIMALS = 10;
 const forestAnimals = [];
 const animalHitMeshes = [];
 
 function buildAnimal3D(cfg) {
   const root = new THREE.Group();
-  const bodyMat = new THREE.MeshStandardMaterial({ color: cfg.color, roughness: 0.8 });
+  const bodyMat = new THREE.MeshStandardMaterial({ color: cfg.color, roughness: 0.65 });
+  const bellyMat = new THREE.MeshStandardMaterial({ color: cfg.bellyColor || 0xfff8eb, roughness: 0.7 });
+  const darkEyeMat = new THREE.MeshBasicMaterial({ color: 0x18120e });
+  const eyeSparkleMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+  const blushMat = new THREE.MeshBasicMaterial({ color: 0xff758f, transparent: true, opacity: 0.78 });
+  const pinkMat = new THREE.MeshStandardMaterial({ color: 0xff9ebb, roughness: 0.5 });
 
-  // Body
-  const body = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.36, 0.82), bodyMat);
-  body.position.y = 0.32;
+  // 1. Plump, Chubby Round Body (Sphere scaled into an adorable pudding/capsule shape!)
+  const body = new THREE.Mesh(new THREE.SphereGeometry(0.36, 18, 16), bodyMat);
+  body.scale.set(1.0, 0.88, 1.25);
+  body.position.set(0, 0.36, 0);
   body.castShadow = true;
   root.add(body);
 
-  // Head
-  const head = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.32, 0.4), bodyMat);
-  head.position.set(0, 0.46, 0.45);
-  root.add(head);
+  // Cute round cream belly patch
+  const belly = new THREE.Mesh(new THREE.SphereGeometry(0.28, 14, 12), bellyMat);
+  belly.scale.set(0.88, 0.75, 1.1);
+  belly.position.set(0, 0.28, 0.05);
+  root.add(belly);
 
+  // 2. Big Cute Round Head (Chibi proportions -> big head = super cute!)
+  const headGroup = new THREE.Group();
+  headGroup.position.set(0, 0.54, 0.38);
+  root.add(headGroup);
+
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.29, 18, 16), bodyMat);
+  head.scale.set(1.06, 0.96, 0.98);
+  head.castShadow = true;
+  headGroup.add(head);
+
+  // Big Shiny Eyes + White Catchlight Sparkles + Rosy Pink Cheeks!
+  [-1, 1].forEach((s) => {
+    const eye = new THREE.Mesh(new THREE.SphereGeometry(0.048, 10, 10), darkEyeMat);
+    eye.position.set(s * 0.13, 0.04, 0.24);
+    headGroup.add(eye);
+
+    // Shiny white sparkle inside the eye!
+    const sparkle = new THREE.Mesh(new THREE.SphereGeometry(0.018, 8, 8), eyeSparkleMat);
+    sparkle.position.set(s * 0.115, 0.062, 0.278);
+    headGroup.add(sparkle);
+
+    // Rosy blushing cheek!
+    const cheek = new THREE.Mesh(new THREE.SphereGeometry(0.052, 10, 10), blushMat);
+    cheek.scale.set(1.2, 0.75, 0.5);
+    cheek.position.set(s * 0.19, -0.04, 0.22);
+    headGroup.add(cheek);
+  });
+
+  // 3. Species-Specific Cute Details
+  const ears = [];
   if (cfg.type === 'rabbit') {
-    // Long rabbit ears
+    // Long floppy/bouncy bunny ears with pink inner ears!
     [-1, 1].forEach((s) => {
-      const ear = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.05, 0.32, 6), bodyMat);
-      ear.position.set(s * 0.09, 0.72, 0.42);
-      root.add(ear);
+      const earPivot = new THREE.Group();
+      earPivot.position.set(s * 0.11, 0.22, -0.02);
+      earPivot.rotation.z = -s * 0.18;
+      const outerEar = new THREE.Mesh(new THREE.SphereGeometry(0.075, 12, 12), bodyMat);
+      outerEar.scale.set(0.85, 2.6, 0.45);
+      outerEar.position.y = 0.16;
+      earPivot.add(outerEar);
+      const innerEar = new THREE.Mesh(new THREE.SphereGeometry(0.05, 10, 10), pinkMat);
+      innerEar.scale.set(0.75, 2.2, 0.35);
+      innerEar.position.set(0, 0.15, 0.025);
+      earPivot.add(innerEar);
+      headGroup.add(earPivot);
+      ears.push(earPivot);
     });
+    // Cute pink button nose
+    const nose = new THREE.Mesh(new THREE.SphereGeometry(0.036, 8, 8), pinkMat);
+    nose.position.set(0, -0.01, 0.285);
+    headGroup.add(nose);
+    // Fluffy cotton-ball tail!
+    const tail = new THREE.Mesh(new THREE.SphereGeometry(0.12, 12, 12), bellyMat);
+    tail.position.set(0, 0.38, -0.45);
+    root.add(tail);
   } else if (cfg.type === 'boar') {
-    // White tusks
-    const tuskMat = new THREE.MeshBasicMaterial({ color: 0xfff8eb });
+    // Cute round pink piglet snout + nostrils!
+    const snout = new THREE.Mesh(new THREE.CylinderGeometry(0.095, 0.105, 0.08, 14), pinkMat);
+    snout.rotation.x = Math.PI / 2;
+    snout.position.set(0, -0.03, 0.27);
+    headGroup.add(snout);
     [-1, 1].forEach((s) => {
-      const tusk = new THREE.Mesh(new THREE.ConeGeometry(0.03, 0.14, 6), tuskMat);
-      tusk.position.set(s * 0.14, 0.38, 0.66);
-      tusk.rotation.x = Math.PI / 4;
-      root.add(tusk);
+      const nostril = new THREE.Mesh(new THREE.SphereGeometry(0.018, 6, 6), darkEyeMat);
+      nostril.position.set(s * 0.035, -0.03, 0.312);
+      headGroup.add(nostril);
+      // Tiny baby tusks
+      const tusk = new THREE.Mesh(new THREE.ConeGeometry(0.025, 0.09, 8), bellyMat);
+      tusk.position.set(s * 0.11, -0.06, 0.26);
+      tusk.rotation.x = Math.PI / 5;
+      headGroup.add(tusk);
+      // Cute round ears
+      const ear = new THREE.Mesh(new THREE.SphereGeometry(0.075, 10, 10), bodyMat);
+      ear.scale.set(1.0, 1.3, 0.45);
+      ear.position.set(s * 0.21, 0.20, 0.0);
+      ear.rotation.z = -s * 0.4;
+      headGroup.add(ear);
     });
+    // Cute cream baby-boar stripes on its back!
+    [-0.12, 0, 0.12].forEach((sx) => {
+      const stripe = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.03, 0.52), bellyMat);
+      stripe.position.set(sx, 0.66, -0.02);
+      root.add(stripe);
+    });
+    // Little round tail
+    const tail = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 8), bodyMat);
+    tail.position.set(0, 0.42, -0.46);
+    root.add(tail);
+  } else if (cfg.type === 'deer') {
+    // Cute Baby Spotted Fawn with cream spots & tiny antlers!
+    [-1, 1].forEach((s) => {
+      const ear = new THREE.Mesh(new THREE.SphereGeometry(0.07, 10, 10), bodyMat);
+      ear.scale.set(1.5, 0.7, 0.4);
+      ear.position.set(s * 0.24, 0.16, -0.02);
+      ear.rotation.z = s * 0.25;
+      headGroup.add(ear);
+
+      const antler = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.024, 0.14, 6), bellyMat);
+      antler.position.set(s * 0.09, 0.29, -0.02);
+      antler.rotation.z = -s * 0.2;
+      headGroup.add(antler);
+    });
+    const nose = new THREE.Mesh(new THREE.SphereGeometry(0.038, 8, 8), darkEyeMat);
+    nose.position.set(0, -0.01, 0.285);
+    headGroup.add(nose);
+    // Cute white spots on back!
+    [[-0.14, 0.62, 0.05], [0.14, 0.62, -0.05], [-0.12, 0.58, -0.22], [0.12, 0.58, 0.18]].forEach(([sx, sy, sz]) => {
+      const spot = new THREE.Mesh(new THREE.SphereGeometry(0.055, 8, 8), bellyMat);
+      spot.position.set(sx, sy, sz);
+      root.add(spot);
+    });
+    const tail = new THREE.Mesh(new THREE.SphereGeometry(0.09, 10, 10), bellyMat);
+    tail.position.set(0, 0.44, -0.45);
+    root.add(tail);
   } else {
-    // Pheasant red crest & tail feather
-    const crest = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.16, 6), new THREE.MeshBasicMaterial({ color: 0xe63946 }));
-    crest.position.set(0, 0.66, 0.46);
-    root.add(crest);
+    // Plump Chubby Baby Forest Bird (🐤 아기 산새)
+    const beak = new THREE.Mesh(
+      new THREE.ConeGeometry(0.055, 0.12, 8),
+      new THREE.MeshStandardMaterial({ color: 0xff7b00 })
+    );
+    beak.rotation.x = Math.PI / 2;
+    beak.position.set(0, -0.02, 0.31);
+    headGroup.add(beak);
+
+    // Cute red head tuft
+    const crest = new THREE.Mesh(
+      new THREE.SphereGeometry(0.065, 10, 10),
+      new THREE.MeshBasicMaterial({ color: 0xff4d6d })
+    );
+    crest.scale.set(0.8, 1.5, 0.9);
+    crest.position.set(0, 0.28, 0.04);
+    headGroup.add(crest);
+
+    // Chubby little flapping side wings
+    [-1, 1].forEach((s) => {
+      const wing = new THREE.Mesh(new THREE.SphereGeometry(0.14, 10, 10), bodyMat);
+      wing.scale.set(0.45, 0.85, 1.3);
+      wing.position.set(s * 0.34, 0.38, 0.02);
+      root.add(wing);
+    });
   }
 
-  // 4 Little Legs
+  // 4 Stubby Cute Round Paws/Legs
   const legs = [];
-  [[-0.18, 0.25], [0.18, 0.25], [-0.18, -0.25], [0.18, -0.25]].forEach(([lx, lz]) => {
-    const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.04, 0.28, 6), bodyMat);
-    leg.position.set(lx, 0.14, lz);
+  [[-0.17, 0.22], [0.17, 0.22], [-0.17, -0.22], [0.17, -0.22]].forEach(([lx, lz]) => {
+    const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.055, 0.24, 10), bodyMat);
+    leg.position.set(lx, 0.12, lz);
     root.add(leg);
     legs.push(leg);
   });
 
   root.scale.setScalar(cfg.scale);
-  return { root, legs };
+  return { root, headGroup, ears, legs };
 }
 
 for (let i = 0; i < MAX_ANIMALS; i++) {
   const cfg = ANIMAL_TYPES[i % ANIMAL_TYPES.length];
-  const { root, legs } = buildAnimal3D(cfg);
+  const { root, headGroup, ears, legs } = buildAnimal3D(cfg);
 
   const ring = new THREE.Mesh(
     new THREE.RingGeometry(0.38, 0.48, 20),
-    new THREE.MeshBasicMaterial({ color: 0xff9f1c, side: THREE.DoubleSide, transparent: true, opacity: 0.45 })
+    new THREE.MeshBasicMaterial({ color: 0xffb703, side: THREE.DoubleSide, transparent: true, opacity: 0.42 })
   );
   ring.rotation.x = -Math.PI / 2;
   ring.position.y = 0.02;
   root.add(ring);
 
   const hitBox = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.85, 0.85, 1.1, 8),
+    new THREE.CylinderGeometry(0.95, 0.95, 1.2, 8),
     new THREE.MeshBasicMaterial({ visible: false })
   );
-  hitBox.position.y = 0.45;
+  hitBox.position.y = 0.5;
   hitBox.userData = { animalIndex: i };
   root.add(hitBox);
   animalHitMeshes.push(hitBox);
 
-  const angle = (i / MAX_ANIMALS) * Math.PI * 2 + 0.5;
-  const dist = 8.4 + (i % 2) * 1.1;
+  const angle = (i / MAX_ANIMALS) * Math.PI * 2 + 0.4;
+  // Roam across both near forest (7.8~10.5m) and deep outer forest (13.5~21.0m)!
+  const dist = i < 5 ? (8.0 + (i % 2) * 1.8) : (13.8 + (i % 3) * 3.2);
   root.position.set(Math.cos(angle) * dist, 0, Math.sin(angle) * dist);
   scene.add(root);
 
@@ -935,6 +1100,8 @@ for (let i = 0; i < MAX_ANIMALS; i++) {
     index: i,
     cfg,
     group: root,
+    headGroup,
+    ears,
     legs,
     ring,
     hitBox,
@@ -1218,10 +1385,17 @@ for (let i = 0; i < MAX_SEATS; i++) {
 
 function updateHUDCounters() {
   document.getElementById('myBranchesDisplay').textContent = `${state.myBranches}개`;
+  const rawEl = document.getElementById('myRawMeatDisplay');
+  if (rawEl) rawEl.textContent = `${state.myRawMeat}점`;
   document.getElementById('myMeatDisplay').textContent = `${state.myMeat}개`;
   document.getElementById('myCoinDisplay').textContent = `${state.myCoins}`;
   const shopCoin = document.getElementById('shopCoinDisplay');
   if (shopCoin) shopCoin.textContent = `${state.myCoins}`;
+
+  const exploreLbl = document.getElementById('exploreBtnLabel');
+  if (exploreLbl) {
+    exploreLbl.textContent = state.freeRoamPos ? '모닥불로 귀환' : '멀리 산책하기';
+  }
 
   const fireTempEl = document.getElementById('fireTempDisplay');
   const fireBtnLabel = document.getElementById('fireBtnLabel');
@@ -1469,6 +1643,16 @@ function createCamper3D(user) {
   skewerGroup.visible = false;
   torsoPivot.add(skewerGroup);
 
+  // 3B. Raw Meat Chunk held in Left Hand when threading onto the Skewer (🍢 꼬치 끼우기!)
+  const threadingMeatMesh = new THREE.Mesh(
+    new THREE.DodecahedronGeometry(0.11, 1),
+    new THREE.MeshStandardMaterial({ color: 0xe63946, roughness: 0.42 })
+  );
+  threadingMeatMesh.scale.set(1.2, 0.95, 0.85);
+  threadingMeatMesh.position.set(0.04, -0.02, 0.46);
+  threadingMeatMesh.visible = false;
+  leftArm.shoulder.add(threadingMeatMesh);
+
   // 4. Steaming Cocoa Mug
   const coffeeGroup = new THREE.Group();
   const mug = new THREE.Mesh(
@@ -1624,6 +1808,7 @@ function createCamper3D(user) {
     heldBranchMesh,
     skewerGroup,
     meatChunks,
+    threadingMeatMesh,
     coffeeGroup,
     steamRings,
     sparklerGroup,
@@ -1636,6 +1821,9 @@ function createCamper3D(user) {
     action: user.action || 'hands',
     inTent: Boolean(user.inTent || user.action === 'sleep'),
     tentWalkState: null,
+    freeRoamPos: null,
+    makingSkewerStartTime: 0,
+    lastSkewerPopStep: 0,
     name: user.name,
     color: user.color,
     roastStartTime: Date.now(),
@@ -1874,15 +2062,15 @@ function triggerHuntAnimalAnimation(fromSeatIndex, specificAnimalIndex = null, i
         actor.group.rotation.y = seat.lookAngle;
         actor.huntingState = null;
         if (isMe) {
-          state.myMeat += 2;
+          state.freeRoamPos = null;
+          state.myRawMeat += 3;
           state.myCoins += 25;
-          state.myAction = 'skewer'; // Automatically hold out the fresh meat skewer!
-          actor.roastStartTime = Date.now();
           saveProgress();
           updateHUDCounters();
           updateDockActiveButtons();
-          sendServerAction({ type: 'pose', action: 'skewer' });
-          showCenterNotice(`🏹 ${targetAnimal.cfg.name} 사냥 성공! 🍖 꼬치 +2개, 🪙 +25코인 획득!`);
+          showCenterNotice(
+            `🏹 ${targetAnimal.cfg.name} 사냥 성공! 🥩 생고기 +3점, 🪙 +25코인 획득! 이제 [🍢 꼬치 끼우기]로 꼬치를 만들어보세요!`
+          );
         }
       });
     }, 450);
@@ -2129,14 +2317,46 @@ function startTentTransitionWalk(camper, toInsideTent, onComplete) {
 }
 
 function exitTentIfNeeded(myCamper) {
-  if (!state.inTent) return;
+  if (!state.inTent && !state.freeRoamPos) return;
   state.inTent = false;
+  state.freeRoamPos = null;
+  walkTargetRing.material.opacity = 0.0;
   if (myCamper) {
     myCamper.inTent = false;
+    myCamper.freeRoamPos = null;
     myCamper.bodyRoot.position.set(0, 0, 0);
   }
   syncTentsForUsers();
+  updateHUDCounters();
   updateDockActiveButtons();
+}
+
+// Helper: Walk freely out to any point (targetX, targetZ) in the wide forest!
+function startFreeRoamWalkTo(targetX, targetZ) {
+  const myCamper = camperMeshes.get(state.clientId);
+  if (!myCamper) return;
+
+  if (state.inTent) {
+    state.inTent = false;
+    myCamper.inTent = false;
+    myCamper.bodyRoot.position.set(0, 0, 0);
+    syncTentsForUsers();
+  }
+
+  state.freeRoamPos = { x: targetX, z: targetZ };
+  myCamper.freeRoamPos = { x: targetX, z: targetZ };
+  walkTargetRing.position.set(targetX, 0.04, targetZ);
+  walkTargetRing.material.opacity = 0.75;
+  updateHUDCounters();
+  updateDockActiveButtons();
+
+  startSafePerimeterWalk(myCamper, targetX, targetZ, () => {
+    myCamper.group.position.set(targetX, 0, targetZ);
+    // Face slightly toward the campfire or outward scenic view
+    myCamper.group.rotation.y = Math.atan2(-targetX, -targetZ);
+    walkTargetRing.material.opacity = 0.25;
+    soundEngine.playPickupPop();
+  });
 }
 
 function triggerCampfireAction(actionId) {
@@ -2144,7 +2364,56 @@ function triggerCampfireAction(actionId) {
   const myCamper = camperMeshes.get(state.clientId);
 
   switch (actionId) {
+    case 'explore': {
+      if (state.freeRoamPos) {
+        // Walk back to campfire log seat!
+        const homeSeat = seats[state.mySeatIndex] || seats[0];
+        state.freeRoamPos = null;
+        walkTargetRing.material.opacity = 0.0;
+        if (myCamper) {
+          myCamper.freeRoamPos = null;
+          startSafePerimeterWalk(myCamper, homeSeat.x, homeSeat.z, () => {
+            myCamper.group.position.set(homeSeat.x, 0, homeSeat.z);
+            myCamper.group.rotation.y = homeSeat.lookAngle;
+          });
+        }
+        updateHUDCounters();
+        updateDockActiveButtons();
+        showCenterNotice('🔥 숲속 산책을 마치고 모닥불 통나무 자리로 돌아왔습니다!');
+      } else {
+        // Pick a scenic outer forest spot (radius 13.5m ~ 20.5m) and walk out there!
+        const mySeat = seats[state.mySeatIndex] || seats[0];
+        const roamAngle = mySeat.angle + (Math.random() * 1.4 - 0.7);
+        const roamRadius = 14.0 + Math.random() * 6.5;
+        const tx = Math.cos(roamAngle) * roamRadius;
+        const tz = Math.sin(roamAngle) * roamRadius;
+        startFreeRoamWalkTo(tx, tz);
+        showCenterNotice('🥾 깊은 숲속으로 멀리 산책을 나갑니다! (숲 바닥 어디든 클릭해도 걸어갈 수 있어요!)');
+      }
+      break;
+    }
+    case 'makeSkewer': {
+      if (state.myRawMeat <= 0) {
+        showCenterNotice('🥩 꼬치에 끼울 생고기가 없어요! 먼저 [🏹 동물 사냥]으로 고기를 잡아오세요!');
+        exitTentIfNeeded(myCamper);
+        triggerHuntAnimalAnimation(state.mySeatIndex, null, true);
+        return;
+      }
+      state.myAction = 'makeSkewer';
+      if (myCamper) {
+        myCamper.makingSkewerStartTime = Date.now();
+        myCamper.lastSkewerPopStep = 0;
+      }
+      updateDockActiveButtons();
+      soundEngine.playPickupPop();
+      sendServerAction({ type: 'pose', action: 'makeSkewer', inTent: state.inTent });
+      showCenterNotice('🍢 잡은 생고기를 꼬치 막대에 한 점씩 쏙쏙 끼웁니다! (1/3 → 2/3 → 3/3)');
+      break;
+    }
     case 'enterTent': {
+      state.freeRoamPos = null;
+      walkTargetRing.material.opacity = 0.0;
+      if (myCamper) myCamper.freeRoamPos = null;
       const goingIn = !state.inTent;
       state.inTent = goingIn;
       if (goingIn && state.myAction === 'hands') {
@@ -2154,6 +2423,7 @@ function triggerCampfireAction(actionId) {
       }
       if (myCamper) myCamper.inTent = goingIn;
       syncTentsForUsers();
+      updateHUDCounters();
       updateDockActiveButtons();
       sendServerAction({ type: 'pose', action: state.myAction, inTent: state.inTent });
 
@@ -2170,11 +2440,15 @@ function triggerCampfireAction(actionId) {
       break;
     }
     case 'sleep': {
+      state.freeRoamPos = null;
+      walkTargetRing.material.opacity = 0.0;
+      if (myCamper) myCamper.freeRoamPos = null;
       const wasOutside = !state.inTent;
       state.inTent = true;
       state.myAction = 'sleep';
       if (myCamper) myCamper.inTent = true;
       syncTentsForUsers();
+      updateHUDCounters();
       updateDockActiveButtons();
       sendServerAction({ type: 'pose', action: 'sleep', inTent: true });
 
@@ -2196,7 +2470,9 @@ function triggerCampfireAction(actionId) {
       showCenterNotice(
         state.inTent
           ? '🍱 아늑한 텐트 안에서 맛있는 캠핑 도시락을 까먹습니다! 냠냠!'
-          : '🍱 모닥불 앞에서 맛있는 수제 캠핑 도시락을 먹습니다! 꿀맛!'
+          : state.freeRoamPos
+            ? '🍱 깊은 숲속 소풍 자리에서 맛있는 도시락을 먹습니다! 꿀맛!'
+            : '🍱 모닥불 앞에서 맛있는 수제 캠핑 도시락을 먹습니다! 꿀맛!'
       );
       break;
     }
@@ -2235,20 +2511,28 @@ function triggerCampfireAction(actionId) {
     }
     case 'skewer': {
       exitTentIfNeeded(myCamper);
+      if (state.myMeat <= 0) {
+        if (state.myRawMeat > 0) {
+          showCenterNotice('🍢 생고기를 먼저 꼬치에 끼워야 해요! [🍢 꼬치 끼우기]를 시작합니다!');
+          triggerCampfireAction('makeSkewer');
+          return;
+        }
+        showCenterNotice('🍖 구울 꼬치가 없어요! 먼저 [🏹 동물 사냥]으로 고기를 구해오세요!');
+        triggerHuntAnimalAnimation(state.mySeatIndex, null, true);
+        return;
+      }
       if (!state.fireLit) {
         showCenterNotice('🔥 먼저 [불 피우기]로 모닥불을 켜야 꼬치를 구울 수 있어요!');
         return;
       }
-      if (state.myMeat <= 0) {
-        showCenterNotice('🍖 고기가 없어요! [🏹 동물 사냥]으로 고기를 구해오세요!');
-        triggerHuntAnimalAnimation(state.mySeatIndex, null, true);
-        return;
-      }
       state.myAction = 'skewer';
-      if (myCamper) myCamper.roastStartTime = Date.now();
+      if (myCamper) {
+        myCamper.roastStartTime = Date.now();
+        myCamper.meatChunks.forEach((c) => { c.visible = true; });
+      }
       updateDockActiveButtons();
       sendServerAction({ type: 'pose', action: 'skewer', inTent: false });
-      showCenterNotice('🍖 사냥한 고기 꼬치를 모닥불에 노릇노릇하게 굽습니다!');
+      showCenterNotice('🍖 직접 끼운 고기 꼬치를 모닥불에 노릇노릇하게 굽습니다!');
       break;
     }
     case 'tent': {
@@ -2453,11 +2737,18 @@ function animate() {
   const now = Date.now();
 
   const mySeat = seats[state.mySeatIndex] || seats[0];
+  const myCamperObj = camperMeshes.get(state.clientId);
   const baseAngle = mySeat.angle + camControl.orbitOffset;
 
-  // --- 4 DISTINCT CAMERA POV MODES + TENT INTERIOR CLOSE-UP ---
+  // --- 4 DISTINCT CAMERA POV MODES + TENT INTERIOR + FOREST EXPLORATION FOLLOW CAM ---
   const targetCamPos = new THREE.Vector3();
   const targetLookAt = new THREE.Vector3();
+
+  // Check if player character is currently out exploring/walking in the outer forest (> 4.2m from center)
+  const charDistFromFire = myCamperObj
+    ? Math.hypot(myCamperObj.group.position.x, myCamperObj.group.position.z)
+    : SEAT_RADIUS;
+  const isOutInForest = myCamperObj && !state.inTent && (Boolean(state.freeRoamPos) || charDistFromFire > 4.25);
 
   if (state.inTent && (state.povMode === 'side' || state.povMode === 'front')) {
     // TENT INTERIOR CLOSE-UP: Looks right inside your cozy see-through tent at your sleeping bag & bento!
@@ -2472,6 +2763,18 @@ function animate() {
       tentWorld.z + Math.sin(viewAngle) * camDistFromTent
     );
     targetLookAt.set(tentWorld.x, 0.65, tentWorld.z);
+  } else if (isOutInForest && state.povMode !== 'fire') {
+    // FOREST EXPLORATION FOLLOW CAMERA: Smoothly follows your character as you walk far out into the woods!
+    const cx = myCamperObj.group.position.x;
+    const cz = myCamperObj.group.position.z;
+    const charAngle = Math.atan2(cz, cx) + 0.55 + camControl.orbitOffset;
+    const followDist = Math.max(2.6, Math.min(12.0, 4.2 + camControl.zoomOffset * 0.7));
+    targetCamPos.set(
+      cx + Math.cos(charAngle) * followDist,
+      2.1 + camControl.pitchOffset * 1.4,
+      cz + Math.sin(charAngle) * followDist
+    );
+    targetLookAt.set(cx, 1.0, cz);
   } else if (state.povMode === 'side') {
     // 1. SIDE ACTION CLOSE-UP (내 동작 클로즈업 - 기본):
     // Angled 52 degrees to the side so the character's face, hands, meat skewer, cocoa mug, AND the campfire are all in plain sight!
@@ -2540,18 +2843,29 @@ function animate() {
     }
   });
 
-  // --- ANIMATE ROAMING FOREST ANIMALS ---
+  // --- ANIMATE ADORABLE ROAMING FOREST ANIMALS ---
   forestAnimals.forEach((an, idx) => {
     if (!an.available) return;
     an.angle += an.dir * an.cfg.speed * 0.12 * dt;
-    const hop = an.cfg.type === 'rabbit' ? Math.abs(Math.sin(elapsed * 6 + idx)) * 0.18 : 0;
+    const hopAmp = an.cfg.type === 'rabbit' ? 0.22 : 0.08;
+    const hop = Math.abs(Math.sin(elapsed * 6.5 + idx)) * hopAmp;
     an.x = Math.cos(an.angle) * an.dist;
     an.z = Math.sin(an.angle) * an.dist;
     an.group.position.set(an.x, hop, an.z);
     // Face tangent direction of movement
     an.group.rotation.y = Math.atan2(-Math.sin(an.angle) * an.dir, Math.cos(an.angle) * an.dir);
 
-    const legSwing = Math.sin(elapsed * 8 + idx) * 0.35;
+    // Cute head bob & bunny ear wiggle!
+    if (an.headGroup) {
+      an.headGroup.rotation.z = Math.sin(elapsed * 5 + idx) * 0.08;
+      an.headGroup.rotation.x = Math.cos(elapsed * 6.5 + idx) * 0.06;
+    }
+    if (an.ears && an.ears.length === 2) {
+      an.ears[0].rotation.x = Math.sin(elapsed * 7 + idx) * 0.18;
+      an.ears[1].rotation.x = -Math.sin(elapsed * 7 + idx) * 0.18;
+    }
+
+    const legSwing = Math.sin(elapsed * 8.5 + idx) * 0.38;
     an.legs[0].rotation.x = legSwing;
     an.legs[1].rotation.x = -legSwing;
     an.legs[2].rotation.x = -legSwing;
@@ -2616,6 +2930,7 @@ function animate() {
     camper.heldLogMesh.visible = false;
     camper.heldBranchMesh.visible = false;
     camper.skewerGroup.visible = false;
+    camper.threadingMeatMesh.visible = false;
     camper.coffeeGroup.visible = false;
     camper.sparklerGroup.visible = false;
     camper.bentoGroup.visible = false;
@@ -2736,9 +3051,10 @@ function animate() {
         }
       }
     } else {
-      // 3. Inside Tent OR Seated Naturally on the Log Facing Forward into the Fire!
+      // 3. Inside Tent, Out in the Deep Forest, OR Seated Naturally on the Log Facing Forward into the Fire!
       const homeSeat = seats[camper.seatIndex] || seats[0];
       const inTentNow = Boolean(camper.inTent || camper.action === 'sleep');
+      const freeRoamNow = !inTentNow && Boolean(camper.freeRoamPos);
 
       if (inTentNow) {
         const useCustom = isMe
@@ -2747,6 +3063,8 @@ function animate() {
         const tentWorld = getSeatTentWorldPos(camper.seatIndex, useCustom);
         camper.group.position.set(tentWorld.x, 0, tentWorld.z);
         camper.group.rotation.y = homeSeat.lookAngle;
+      } else if (freeRoamNow) {
+        camper.group.position.set(camper.freeRoamPos.x, 0, camper.freeRoamPos.z);
       } else if (!isOffering) {
         camper.group.position.set(homeSeat.x, 0, homeSeat.z);
         camper.group.rotation.y = homeSeat.lookAngle;
@@ -2774,8 +3092,8 @@ function animate() {
 
         bubbleHTML = `🛌 텐트 안에서 코오~ 꿀잠 자는 중... 💤`;
       } else {
-        // Sitting posture (on sleeping mat inside tent, or on log bench outside)
-        const targetBodyY = inTentNow ? -0.20 : 0.0;
+        // Sitting posture (on sleeping mat inside tent, on forest grass picnic, or on log bench)
+        const targetBodyY = (inTentNow || freeRoamNow) ? -0.20 : 0.0;
         camper.bodyRoot.position.x = 0;
         camper.bodyRoot.position.y = lerp(camper.bodyRoot.position.y, targetBodyY, 0.15);
         camper.bodyRoot.position.z = lerp(camper.bodyRoot.position.z || 0, 0.0, 0.15);
@@ -2806,6 +3124,69 @@ function animate() {
           camper.coffeeGroup.visible = (camper.action === 'coffee');
           camper.skewerGroup.visible = (camper.action === 'skewer');
           bubbleHTML = `🙏 "고맙습니다! 맛있게 먹을게요!"`;
+        } else if (camper.action === 'makeSkewer') {
+          // 🍢 3D SKEWER THREADING ANIMATION: Threading 3 pieces of caught raw meat onto the bamboo skewer stick one by one!
+          camper.skewerGroup.visible = true;
+          camper.skewerGroup.position.set(0.10, 0.56, 0.28);
+          targetTorsoLean = 0.18;
+
+          const makeElapsed = (now - (camper.makingSkewerStartTime || now)) / 1000;
+          const step = Math.min(3, Math.floor(makeElapsed / 0.85) + 1); // 1, 2, 3
+          const stepProgress = (makeElapsed % 0.85) / 0.85;
+
+          // Reset meatChunks to raw savory red while threading!
+          camper.meatChunks.forEach((chunk, idx) => {
+            chunk.material.color.setHex(0xd9483b);
+            if (makeElapsed < 2.55) {
+              chunk.visible = idx < step;
+              if (idx === step - 1) {
+                // Slide the new chunk down the stick from the tip!
+                chunk.position.z = lerp(1.22, 0.86 + idx * 0.16, Math.min(1, stepProgress * 1.4));
+              } else {
+                chunk.position.z = 0.86 + idx * 0.16;
+              }
+            } else {
+              chunk.visible = true;
+              chunk.position.z = 0.86 + idx * 0.16;
+            }
+          });
+
+          if (makeElapsed < 2.55) {
+            camper.threadingMeatMesh.visible = stepProgress < 0.65;
+            // Right hand holds the bamboo skewer stick steady
+            targetRightArmX = -0.46;
+            targetRightArmY = -0.14;
+            // Left hand pushes each raw meat chunk onto the stick ("쏙! 쏙! 쏙!")
+            const pushMotion = Math.sin(stepProgress * Math.PI);
+            targetLeftArmX = -0.52 - pushMotion * 0.22;
+            targetLeftArmY = 0.12 + pushMotion * 0.24;
+            targetHeadX = 0.16;
+
+            if (isMe && camper.lastSkewerPopStep !== step) {
+              camper.lastSkewerPopStep = step;
+              soundEngine.playPickupPop();
+            }
+            bubbleHTML = `🍢 생고기를 꼬치에 끼우는 중! (${step}/3 쏙!)`;
+          } else {
+            // Completed threading all 3 chunks!
+            targetRightArmX = -0.58;
+            targetRightArmY = -0.05;
+            targetLeftArmX = -0.35;
+            targetLeftArmY = 0.20;
+            if (isMe && camper.lastSkewerPopStep < 4) {
+              camper.lastSkewerPopStep = 4;
+              const usedRaw = Math.min(state.myRawMeat, 3);
+              if (usedRaw > 0) {
+                state.myRawMeat = Math.max(0, state.myRawMeat - usedRaw);
+                state.myMeat += 1;
+                saveProgress();
+                updateHUDCounters();
+                soundEngine.playHappyChime();
+                showCenterNotice(`🍢 고기꼬치 +1개 완성! (보유 꼬치: ${state.myMeat}개) 이제 [🍖 꼬치 굽기]로 구워보세요!`);
+              }
+            }
+            bubbleHTML = `🍢 수제 고기꼬치 완성! [🍖 꼬치 굽기]를 눌러보세요!`;
+          }
         } else if (camper.action === 'bento') {
           // Eating 3D Multi-Compartment Camping Bento Box with Chopsticks!
           camper.bentoGroup.visible = true;
@@ -2822,9 +3203,11 @@ function animate() {
           targetHeadX = toMouth * 0.14;
           bubbleHTML = inTentNow
             ? `🍱 텐트 안에서 맛있는 도시락 냠냠! 😋`
-            : `🍱 모닥불 보며 캠핑 도시락 냠냠! 😋`;
+            : freeRoamNow
+              ? `🍱 숲속 소풍 자리에서 도시락 냠냠! 😋`
+              : `🍱 모닥불 보며 캠핑 도시락 냠냠! 😋`;
         } else if (camper.action === 'hands') {
-          camper.handWarmGlow.visible = state.fireLit && !inTentNow;
+          camper.handWarmGlow.visible = state.fireLit && !inTentNow && !freeRoamNow;
           camper.handWarmGlow.scale.setScalar(0.85 + Math.sin(elapsed * 5) * 0.18);
           targetTorsoLean = 0.24;
           const rub = Math.sin(elapsed * 5.0) * 0.09;
@@ -2835,12 +3218,18 @@ function animate() {
           if (isMe) {
             if (inTentNow) {
               bubbleHTML = `🏕️ 아늑한 내 텐트 안에서 쉬는 중!`;
+            } else if (freeRoamNow) {
+              bubbleHTML = `🌲 깊은 숲속 산책 중! (바닥을 클릭해 더 걸어가거나 [모닥불로 귀환]을 누르세요)`;
             } else {
               bubbleHTML = state.fireLit ? `🤲 불꽃에 손 녹이는 중 (따끈따끈!)` : `🌿 [불 피우기]로 모닥불을 켜보세요!`;
             }
           }
         } else if (camper.action === 'skewer') {
           camper.skewerGroup.visible = true;
+          camper.meatChunks.forEach((c, idx) => {
+            c.visible = true;
+            c.position.z = 0.86 + idx * 0.16;
+          });
           const roastElapsed = (now - camper.roastStartTime) / 1000;
           const roastPct = Math.min(100, Math.floor((roastElapsed / 8.0) * 100));
           const isEating = roastElapsed > 9.5 && roastElapsed < 11.5;
@@ -3034,6 +3423,10 @@ window.addEventListener('pointerup', (e) => {
         triggerCampfireAction('enterTent');
         return;
       }
+      if (newSeat === state.mySeatIndex && state.freeRoamPos) {
+        triggerCampfireAction('explore');
+        return;
+      }
       if (newSeat !== state.mySeatIndex) {
         const myCamper = camperMeshes.get(state.clientId);
         exitTentIfNeeded(myCamper);
@@ -3055,13 +3448,26 @@ window.addEventListener('pointerup', (e) => {
         }
         showCenterNotice('👣 모닥불 둘레를 따라 선택한 통나무 자리로 이동합니다!');
       }
+      return;
+    }
+  }
+
+  // 5. Clicked anywhere on the Forest Ground outside the campfire? -> Walk freely out into the forest (up to 28m away)!
+  const groundHits = raycaster.intersectObject(groundMesh, false);
+  if (groundHits.length > 0) {
+    const pt = groundHits[0].point;
+    const clickRadius = Math.hypot(pt.x, pt.z);
+    if (clickRadius >= 4.2 && clickRadius <= 28.5) {
+      soundEngine.init();
+      startFreeRoamWalkTo(pt.x, pt.z);
+      showCenterNotice('🥾 선택한 숲속 위치로 걸어갑니다! (돌아오려면 [모닥불로 귀환] 또는 통나무 의자를 클릭하세요)');
     }
   }
 });
 
-// Mouse Wheel Zoom
+// Mouse Wheel Zoom (Wider range so players can zoom out far into the forest!)
 window.addEventListener('wheel', (e) => {
-  camControl.zoomOffset = Math.max(-2.2, Math.min(4.8, camControl.zoomOffset + e.deltaY * 0.004));
+  camControl.zoomOffset = Math.max(-2.4, Math.min(9.5, camControl.zoomOffset + e.deltaY * 0.004));
 }, { passive: true });
 
 // Mobile 2-Finger Pinch-to-Zoom!
@@ -3081,7 +3487,7 @@ canvas.addEventListener('touchmove', (e) => {
     const dy = e.touches[0].clientY - e.touches[1].clientY;
     const dist = Math.hypot(dx, dy);
     const delta = (camControl.pinchStartDist - dist) * 0.018;
-    camControl.zoomOffset = Math.max(-2.2, Math.min(4.8, camControl.pinchStartZoom + delta));
+    camControl.zoomOffset = Math.max(-2.4, Math.min(9.5, camControl.pinchStartZoom + delta));
   }
 }, { passive: true });
 
