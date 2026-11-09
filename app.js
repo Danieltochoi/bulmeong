@@ -106,7 +106,8 @@ const state = {
   region: urlParams.get('region') || 'apac',
   season: 'autumn',
   mySeatIndex: 0,
-  myAction: 'hands', // 'hands' | 'skewer' | 'coffee' | 'sparkler'
+  myAction: 'hands', // 'hands' | 'skewer' | 'coffee' | 'sparkler' | 'sleep' | 'bento'
+  inTent: false, // true when character is inside their tent!
   myBranches: 2, // Start with 2 branches so user can light the fire right away or gather more!
   myMeat: Number(localStorage.getItem('bm_meat') || 1),
   myCoins: Number(localStorage.getItem('bm_coins') || 20),
@@ -953,11 +954,49 @@ const MAX_SEATS = 12;
 const SEAT_RADIUS = 3.5;
 const seats = [];
 const seatClickMeshes = [];
+const tentClickMeshes = [];
 
 const logSeatMat = new THREE.MeshStandardMaterial({ color: 0x593a24, roughness: 0.85 });
 const logEndMat = new THREE.MeshStandardMaterial({ color: 0x996b45, roughness: 0.8 });
 
-function buildSeatTents() {
+function buildInteriorBedding(scale = 1.0) {
+  const bedGroup = new THREE.Group();
+  // Cozy quilted sleeping mat / mattress
+  const matMesh = new THREE.Mesh(
+    new THREE.BoxGeometry(0.95 * scale, 0.1 * scale, 1.55 * scale),
+    new THREE.MeshStandardMaterial({ color: 0x3b6e52, roughness: 0.8 })
+  );
+  matMesh.position.set(0, 0.06, 0);
+  bedGroup.add(matMesh);
+
+  // Soft warm blanket on lower half of sleeping bag
+  const blanketMesh = new THREE.Mesh(
+    new THREE.BoxGeometry(0.98 * scale, 0.14 * scale, 0.92 * scale),
+    new THREE.MeshStandardMaterial({ color: 0xe07a5f, roughness: 0.75 })
+  );
+  blanketMesh.position.set(0, 0.12, 0.25 * scale);
+  bedGroup.add(blanketMesh);
+
+  // Fluffy white camping pillow at the back (-Z)
+  const pillowMesh = new THREE.Mesh(
+    new THREE.BoxGeometry(0.62 * scale, 0.14 * scale, 0.34 * scale),
+    new THREE.MeshStandardMaterial({ color: 0xfff8eb, roughness: 0.65 })
+  );
+  pillowMesh.position.set(0, 0.15, -0.52 * scale);
+  bedGroup.add(pillowMesh);
+
+  // Warm interior hanging tent lantern
+  const lanternBulb = new THREE.Mesh(
+    new THREE.SphereGeometry(0.09 * scale, 10, 10),
+    new THREE.MeshBasicMaterial({ color: 0xffe58f })
+  );
+  lanternBulb.position.set(0, 1.15 * scale, 0);
+  bedGroup.add(lanternBulb);
+
+  return bedGroup;
+}
+
+function buildSeatTents(seatIndex) {
   const tentZone = new THREE.Group();
   // Located behind the seat (in local seat coordinates, -Z is away from the fire, +Z is toward the fire)
   tentZone.position.set(0, 0, -2.5);
@@ -965,12 +1004,33 @@ function buildSeatTents() {
   // 1. ORIGINAL BASE TENT (원본 기본 삼각 텐트 — 항상 기본으로 유지!)
   const origGroup = new THREE.Group();
   origGroup.position.set(-1.35, 0, -0.3);
-  const origMat = new THREE.MeshStandardMaterial({ color: 0x8d775f, roughness: 0.85 });
-  const origBody = new THREE.Mesh(new THREE.ConeGeometry(0.95, 1.35, 4), origMat);
-  origBody.position.y = 0.67;
+  const origMat = new THREE.MeshStandardMaterial({
+    color: 0x8d775f,
+    roughness: 0.85,
+    transparent: true,
+    opacity: 1.0,
+    side: THREE.DoubleSide
+  });
+  const origBody = new THREE.Mesh(new THREE.ConeGeometry(1.15, 1.55, 4), origMat);
+  origBody.position.y = 0.77;
   origBody.rotation.y = Math.PI / 4;
   origBody.castShadow = true;
   origGroup.add(origBody);
+
+  // Interior sleeping bag + pillow inside Original Tent
+  const origBed = buildInteriorBedding(0.85);
+  origGroup.add(origBed);
+
+  // Click hitbox for Original Tent
+  const origHit = new THREE.Mesh(
+    new THREE.BoxGeometry(1.6, 1.6, 1.6),
+    new THREE.MeshBasicMaterial({ visible: false })
+  );
+  origHit.position.y = 0.8;
+  origHit.userData = { seatIndex, tentType: 'orig' };
+  origGroup.add(origHit);
+  tentClickMeshes.push(origHit);
+
   tentZone.add(origGroup);
 
   // 2. CUSTOM UPGRADABLE TENT (꾸미기/업그레이드 전용 텐트 — 원본 텐트 옆에 멋지게 지어짐!)
@@ -982,7 +1042,10 @@ function buildSeatTents() {
     color: 0xd48b45,
     roughness: 0.72,
     emissive: 0xff8833,
-    emissiveIntensity: 0.18
+    emissiveIntensity: 0.18,
+    transparent: true,
+    opacity: 1.0,
+    side: THREE.DoubleSide
   });
 
   // Level 1: Bell Glamping Tent
@@ -995,6 +1058,25 @@ function buildSeatTents() {
   bellRoof.position.y = 1.4;
   bellRoof.castShadow = true;
   customGroup.add(bellRoof);
+
+  // Interior spacious glamping bed + pillow inside Custom Tent
+  const customBed = buildInteriorBedding(1.12);
+  customGroup.add(customBed);
+
+  // Warm interior PointLight when camper is inside the tent
+  const interiorLight = new THREE.PointLight(0xffcb6b, 0.0, 5.5, 1.5);
+  interiorLight.position.set(0, 1.1, -0.2);
+  tentZone.add(interiorLight);
+
+  // Click hitbox for Custom Tent
+  const customHit = new THREE.Mesh(
+    new THREE.CylinderGeometry(1.5, 1.5, 2.1, 10),
+    new THREE.MeshBasicMaterial({ visible: false })
+  );
+  customHit.position.y = 1.05;
+  customHit.userData = { seatIndex, tentType: 'custom' };
+  customGroup.add(customHit);
+  tentClickMeshes.push(customHit);
 
   // Level 2 Extra: Wooden Cabin Tarp & Stove Chimney
   const tarpGroup = new THREE.Group();
@@ -1064,8 +1146,10 @@ function buildSeatTents() {
   return {
     tentZone,
     origGroup,
+    origMat,
     customGroup,
     customTentMat,
+    interiorLight,
     tarpGroup,
     furnitureGroup,
     lightsGroup
@@ -1106,7 +1190,7 @@ for (let i = 0; i < MAX_SEATS; i++) {
   seatGroup.add(woodPileGroup);
 
   // Seat Tents (Original Base Tent + Custom Upgraded Tent)
-  const tentParts = buildSeatTents();
+  const tentParts = buildSeatTents(i);
   seatGroup.add(tentParts.tentZone);
   tentParts.tentZone.visible = false; // Shown only for occupied seats!
 
@@ -1172,6 +1256,18 @@ function sRot(mesh, i) {
   mesh.rotation.y = i % 2 === 0 ? 0.15 : -0.15;
 }
 
+function getSeatTentWorldPos(seatIndex, useCustomTent = false) {
+  const seat = seats[seatIndex] || seats[0];
+  seat.group.updateMatrixWorld(true);
+  const targetVec = new THREE.Vector3();
+  if (useCustomTent) {
+    seat.tentParts.customGroup.getWorldPosition(targetVec);
+  } else {
+    seat.tentParts.origGroup.getWorldPosition(targetVec);
+  }
+  return targetVec;
+}
+
 function syncTentsForUsers() {
   seats.forEach((s) => {
     s.tentParts.tentZone.visible = false;
@@ -1188,12 +1284,19 @@ function syncTentsForUsers() {
     const tColor = isMe ? state.tentColor : (u.tentColor || '#d48b45');
     const hasFurn = isMe ? state.hasFurniture : Boolean(u.hasFurniture);
     const hasLight = isMe ? state.hasLights : Boolean(u.hasLights);
+    const inTent = isMe ? state.inTent : Boolean(u.inTent || u.action === 'sleep');
 
-    tp.customGroup.visible = tLevel >= 1 || hasFurn || hasLight;
+    const hasCustom = tLevel >= 1 || hasFurn || hasLight;
+    tp.customGroup.visible = hasCustom;
     tp.customTentMat.color.set(tColor);
     tp.tarpGroup.visible = tLevel >= 2;
     tp.furnitureGroup.visible = hasFurn;
     tp.lightsGroup.visible = hasLight;
+
+    // When camper is inside the tent, make the active tent softly see-through (cutaway view) & light up the interior!
+    tp.origMat.opacity = (inTent && !hasCustom) ? 0.36 : 1.0;
+    tp.customTentMat.opacity = (inTent && hasCustom) ? 0.36 : 1.0;
+    tp.interiorLight.intensity = inTent ? 2.4 : 0.35;
   });
 }
 
@@ -1415,6 +1518,82 @@ function createCamper3D(user) {
   sparklerGroup.visible = false;
   torsoPivot.add(sparklerGroup);
 
+  // 6. 3D Multi-Compartment Camping Bento Lunchbox (도시락 + 젓가락!)
+  const bentoGroup = new THREE.Group();
+  // Outer wooden/red lacquer bento box tray
+  const bentoBox = new THREE.Mesh(
+    new THREE.BoxGeometry(0.42, 0.08, 0.30),
+    new THREE.MeshStandardMaterial({ color: 0xc93b2b, roughness: 0.45 })
+  );
+  bentoGroup.add(bentoBox);
+  // Inner dark tray rim
+  const bentoInner = new THREE.Mesh(
+    new THREE.BoxGeometry(0.38, 0.084, 0.26),
+    new THREE.MeshStandardMaterial({ color: 0x261c18, roughness: 0.7 })
+  );
+  bentoGroup.add(bentoInner);
+  // Fluffy white steamed rice compartment (left half)
+  const riceBed = new THREE.Mesh(
+    new THREE.BoxGeometry(0.17, 0.05, 0.23),
+    new THREE.MeshStandardMaterial({ color: 0xfffcf5, roughness: 0.85 })
+  );
+  riceBed.position.set(-0.09, 0.032, 0);
+  bentoGroup.add(riceBed);
+  // Red plum / sesame topping on rice
+  const plumDot = new THREE.Mesh(
+    new THREE.SphereGeometry(0.025, 8, 8),
+    new THREE.MeshBasicMaterial({ color: 0xd62828 })
+  );
+  plumDot.position.set(-0.09, 0.06, 0);
+  bentoGroup.add(plumDot);
+  // Golden rolled egg (계란말이) & grilled sausages + broccoli (right half)
+  const eggRoll = new THREE.Mesh(
+    new THREE.BoxGeometry(0.14, 0.05, 0.07),
+    new THREE.MeshStandardMaterial({ color: 0xffca3a, roughness: 0.6 })
+  );
+  eggRoll.position.set(0.09, 0.035, -0.06);
+  bentoGroup.add(eggRoll);
+  const sausage = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.028, 0.028, 0.13, 8),
+    new THREE.MeshStandardMaterial({ color: 0xb5442e, roughness: 0.5 })
+  );
+  sausage.rotation.z = Math.PI / 2;
+  sausage.position.set(0.09, 0.038, 0.02);
+  bentoGroup.add(sausage);
+  const broccoli = new THREE.Mesh(
+    new THREE.DodecahedronGeometry(0.04, 1),
+    new THREE.MeshStandardMaterial({ color: 0x4caf50, roughness: 0.8 })
+  );
+  broccoli.position.set(0.09, 0.042, 0.085);
+  bentoGroup.add(broccoli);
+
+  bentoGroup.position.set(0, 0.50, 0.48);
+  bentoGroup.visible = false;
+  torsoPivot.add(bentoGroup);
+
+  // Wooden Chopsticks held in Right Hand when eating Bento!
+  const chopstickGroup = new THREE.Group();
+  [-0.015, 0.015].forEach((offset, idx) => {
+    const stickMesh = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.008, 0.005, 0.28, 6),
+      new THREE.MeshStandardMaterial({ color: 0xe0a96d })
+    );
+    stickMesh.rotation.z = idx === 0 ? 0.08 : -0.08;
+    stickMesh.position.x = offset;
+    chopstickGroup.add(stickMesh);
+  });
+  // Bite of food on the chopstick tip!
+  const biteFood = new THREE.Mesh(
+    new THREE.SphereGeometry(0.032, 8, 8),
+    new THREE.MeshStandardMaterial({ color: 0xffca3a })
+  );
+  biteFood.position.set(0, -0.13, 0);
+  chopstickGroup.add(biteFood);
+  chopstickGroup.position.set(-0.04, -0.02, 0.46);
+  chopstickGroup.rotation.x = Math.PI / 3;
+  chopstickGroup.visible = false;
+  rightArm.shoulder.add(chopstickGroup);
+
   const hitBox = new THREE.Mesh(
     new THREE.CylinderGeometry(0.55, 0.55, 1.9, 8),
     new THREE.MeshBasicMaterial({ visible: false })
@@ -1449,10 +1628,14 @@ function createCamper3D(user) {
     steamRings,
     sparklerGroup,
     spCore,
+    bentoGroup,
+    chopstickGroup,
     hitBox,
     bubbleEl,
     seatIndex: user.seatIndex,
     action: user.action || 'hands',
+    inTent: Boolean(user.inTent || user.action === 'sleep'),
+    tentWalkState: null,
     name: user.name,
     color: user.color,
     roastStartTime: Date.now(),
@@ -1519,14 +1702,15 @@ function syncCampers3D() {
     const prevSeat = camper.seatIndex;
     camper.seatIndex = u.seatIndex;
     camper.action = u.action || 'hands';
+    camper.inTent = u.id === state.clientId ? state.inTent : Boolean(u.inTent || u.action === 'sleep');
     camper.name = u.name;
     camper.hitBox.userData.seatIndex = u.seatIndex;
 
     const seat = seats[u.seatIndex] || seats[0];
-    if (prevSeat !== u.seatIndex && !camper.arcWalkState) {
+    if (prevSeat !== u.seatIndex && !camper.arcWalkState && !camper.tentWalkState) {
       camper.group.position.set(seat.x, 0, seat.z);
       camper.group.rotation.y = seat.lookAngle;
-    } else if (!camper.arcWalkState && !camper.placingLogState && !camper.gatheringState && !camper.huntingState && camper.group.position.lengthSq() < 0.01) {
+    } else if (!camper.arcWalkState && !camper.tentWalkState && !camper.placingLogState && !camper.gatheringState && !camper.huntingState && camper.group.position.lengthSq() < 0.01) {
       camper.group.position.set(seat.x, 0, seat.z);
       camper.group.rotation.y = seat.lookAngle;
     }
@@ -1892,8 +2076,18 @@ declineGiftBtn.addEventListener('click', () => {
 function updateDockActiveButtons() {
   document.querySelectorAll('#dockActionsContainer .action-btn').forEach((btn) => {
     const act = btn.dataset.action;
-    btn.classList.toggle('active-pose', act === state.myAction);
+    if (act === 'enterTent') {
+      btn.classList.toggle('active-pose', state.inTent);
+    } else {
+      btn.classList.toggle('active-pose', act === state.myAction);
+    }
   });
+  const enterIcon = document.getElementById('enterTentIcon');
+  const enterLabel = document.getElementById('enterTentLabel');
+  if (enterIcon && enterLabel) {
+    enterIcon.textContent = state.inTent ? '🔥' : '🏕️';
+    enterLabel.textContent = state.inTent ? '모닥불로 나오기' : '텐트 들어가기';
+  }
 }
 
 document.querySelectorAll('#dockActionsContainer .action-btn').forEach((btn) => {
@@ -1902,16 +2096,117 @@ document.querySelectorAll('#dockActionsContainer .action-btn').forEach((btn) => 
   });
 });
 
+// Helper: Smoothly walk character between their log seat and inside their tent!
+function startTentTransitionWalk(camper, toInsideTent, onComplete) {
+  if (!camper) return;
+  const seat = seats[camper.seatIndex] || seats[0];
+  const isMe = camper.id === state.clientId;
+  const useCustom = isMe
+    ? (state.tentLevel >= 1 || state.hasFurniture || state.hasLights)
+    : true;
+  const tentPos = getSeatTentWorldPos(camper.seatIndex, useCustom);
+
+  const startX = camper.group.position.x;
+  const startZ = camper.group.position.z;
+  const targetX = toInsideTent ? tentPos.x : seat.x;
+  const targetZ = toInsideTent ? tentPos.z : seat.z;
+
+  camper.arcWalkState = null;
+  camper.placingLogState = null;
+  camper.gatheringState = null;
+  camper.huntingState = null;
+
+  camper.tentWalkState = {
+    startTime: Date.now(),
+    duration: 750,
+    startX,
+    startZ,
+    targetX,
+    targetZ,
+    lookAngle: seat.lookAngle,
+    onComplete
+  };
+}
+
+function exitTentIfNeeded(myCamper) {
+  if (!state.inTent) return;
+  state.inTent = false;
+  if (myCamper) {
+    myCamper.inTent = false;
+    myCamper.bodyRoot.position.set(0, 0, 0);
+  }
+  syncTentsForUsers();
+  updateDockActiveButtons();
+}
+
 function triggerCampfireAction(actionId) {
   soundEngine.init();
   const myCamper = camperMeshes.get(state.clientId);
 
   switch (actionId) {
+    case 'enterTent': {
+      const goingIn = !state.inTent;
+      state.inTent = goingIn;
+      if (goingIn && state.myAction === 'hands') {
+        state.myAction = 'bento'; // Cozy default inside tent!
+      } else if (!goingIn && state.myAction === 'sleep') {
+        state.myAction = 'hands';
+      }
+      if (myCamper) myCamper.inTent = goingIn;
+      syncTentsForUsers();
+      updateDockActiveButtons();
+      sendServerAction({ type: 'pose', action: state.myAction, inTent: state.inTent });
+
+      if (myCamper) {
+        startTentTransitionWalk(myCamper, goingIn, () => {
+          soundEngine.playPickupPop();
+        });
+      }
+      showCenterNotice(
+        goingIn
+          ? '🏕️ 포근한 내 텐트 안으로 들어왔어요! 안에서 [잠자기]나 [도시락 먹기]를 해보세요!'
+          : '🔥 텐트 밖으로 나와 모닥불 통나무 자리에 앉았습니다!'
+      );
+      break;
+    }
+    case 'sleep': {
+      const wasOutside = !state.inTent;
+      state.inTent = true;
+      state.myAction = 'sleep';
+      if (myCamper) myCamper.inTent = true;
+      syncTentsForUsers();
+      updateDockActiveButtons();
+      sendServerAction({ type: 'pose', action: 'sleep', inTent: true });
+
+      if (myCamper && wasOutside) {
+        startTentTransitionWalk(myCamper, true, () => {
+          soundEngine.playHappyChime();
+        });
+      } else {
+        soundEngine.playHappyChime();
+      }
+      showCenterNotice('🛌 텐트 안 푹신한 침낭에 누워 쿨쿨 꿀잠을 잡니다... 💤');
+      break;
+    }
+    case 'bento': {
+      state.myAction = 'bento';
+      updateDockActiveButtons();
+      soundEngine.playPickupPop();
+      sendServerAction({ type: 'pose', action: 'bento', inTent: state.inTent });
+      showCenterNotice(
+        state.inTent
+          ? '🍱 아늑한 텐트 안에서 맛있는 캠핑 도시락을 까먹습니다! 냠냠!'
+          : '🍱 모닥불 앞에서 맛있는 수제 캠핑 도시락을 먹습니다! 꿀맛!'
+      );
+      break;
+    }
     case 'gather': {
+      exitTentIfNeeded(myCamper);
       triggerGatherBranchAnimation(state.mySeatIndex, null, true);
       break;
     }
     case 'log': {
+      exitTentIfNeeded(myCamper);
       if (state.myBranches <= 0) {
         showCenterNotice('🌿 나무가 부족해요! 먼저 [🌿 나무 줍기]를 눌러 나무를 모아오세요!');
         triggerGatherBranchAnimation(state.mySeatIndex, null, true);
@@ -1934,10 +2229,12 @@ function triggerCampfireAction(actionId) {
       break;
     }
     case 'hunt': {
+      exitTentIfNeeded(myCamper);
       triggerHuntAnimalAnimation(state.mySeatIndex, null, true);
       break;
     }
     case 'skewer': {
+      exitTentIfNeeded(myCamper);
       if (!state.fireLit) {
         showCenterNotice('🔥 먼저 [불 피우기]로 모닥불을 켜야 꼬치를 구울 수 있어요!');
         return;
@@ -1950,7 +2247,7 @@ function triggerCampfireAction(actionId) {
       state.myAction = 'skewer';
       if (myCamper) myCamper.roastStartTime = Date.now();
       updateDockActiveButtons();
-      sendServerAction({ type: 'pose', action: 'skewer' });
+      sendServerAction({ type: 'pose', action: 'skewer', inTent: false });
       showCenterNotice('🍖 사냥한 고기 꼬치를 모닥불에 노릇노릇하게 굽습니다!');
       break;
     }
@@ -1959,20 +2256,22 @@ function triggerCampfireAction(actionId) {
       break;
     }
     case 'hands': {
+      exitTentIfNeeded(myCamper);
       state.myAction = 'hands';
       updateDockActiveButtons();
-      sendServerAction({ type: 'pose', action: 'hands' });
+      sendServerAction({ type: 'pose', action: 'hands', inTent: false });
       showCenterNotice('🤲 모닥불에 두 손을 따뜻하게 녹입니다.');
       break;
     }
     case 'coffee': {
       state.myAction = 'coffee';
       updateDockActiveButtons();
-      sendServerAction({ type: 'pose', action: 'coffee' });
+      sendServerAction({ type: 'pose', action: 'coffee', inTent: state.inTent });
       showCenterNotice('☕ 김이 모락모락 나는 따뜻한 코코아를 마십니다.');
       break;
     }
     case 'give': {
+      exitTentIfNeeded(myCamper);
       if (state.users.length <= 1) {
         state.enableSoloCompanion = true;
         rebuildActiveUsersList();
@@ -1987,9 +2286,10 @@ function triggerCampfireAction(actionId) {
       break;
     }
     case 'sparkler': {
+      exitTentIfNeeded(myCamper);
       state.myAction = 'sparkler';
       updateDockActiveButtons();
-      sendServerAction({ type: 'pose', action: 'sparkler' });
+      sendServerAction({ type: 'pose', action: 'sparkler', inTent: false });
       showCenterNotice('🎇 반짝반짝 불꽃놀이를 합니다!');
       break;
     }
@@ -2155,11 +2455,24 @@ function animate() {
   const mySeat = seats[state.mySeatIndex] || seats[0];
   const baseAngle = mySeat.angle + camControl.orbitOffset;
 
-  // --- 4 DISTINCT CAMERA POV MODES SO CHARACTER ACTIONS ARE 100% VISIBLE ---
+  // --- 4 DISTINCT CAMERA POV MODES + TENT INTERIOR CLOSE-UP ---
   const targetCamPos = new THREE.Vector3();
   const targetLookAt = new THREE.Vector3();
 
-  if (state.povMode === 'side') {
+  if (state.inTent && (state.povMode === 'side' || state.povMode === 'front')) {
+    // TENT INTERIOR CLOSE-UP: Looks right inside your cozy see-through tent at your sleeping bag & bento!
+    const useCustom = state.tentLevel >= 1 || state.hasFurniture || state.hasLights;
+    const tentWorld = getSeatTentWorldPos(state.mySeatIndex, useCustom);
+    const camDistFromTent = Math.max(1.8, Math.min(5.5, 2.75 + camControl.zoomOffset * 0.5));
+    // Position camera slightly toward the campfire side + angled so we clearly see inside the tent
+    const viewAngle = mySeat.angle + Math.PI + 0.35 + camControl.orbitOffset;
+    targetCamPos.set(
+      tentWorld.x + Math.cos(viewAngle) * camDistFromTent,
+      1.55 + camControl.pitchOffset * 0.9,
+      tentWorld.z + Math.sin(viewAngle) * camDistFromTent
+    );
+    targetLookAt.set(tentWorld.x, 0.65, tentWorld.z);
+  } else if (state.povMode === 'side') {
     // 1. SIDE ACTION CLOSE-UP (내 동작 클로즈업 - 기본):
     // Angled 52 degrees to the side so the character's face, hands, meat skewer, cocoa mug, AND the campfire are all in plain sight!
     const dist = Math.max(3.2, Math.min(10.5, 4.85 + camControl.zoomOffset));
@@ -2286,6 +2599,7 @@ function animate() {
     camper.group.visible = !(isMe && state.povMode === 'fire');
 
     const isArcWalking = Boolean(camper.arcWalkState);
+    const isTentWalking = Boolean(camper.tentWalkState);
     const isPlacingLog = Boolean(camper.placingLogState);
     const isOffering = now < camper.offeringUntil;
     const isReceiving = now < camper.receivingUntil;
@@ -2304,6 +2618,8 @@ function animate() {
     camper.skewerGroup.visible = false;
     camper.coffeeGroup.visible = false;
     camper.sparklerGroup.visible = false;
+    camper.bentoGroup.visible = false;
+    camper.chopstickGroup.visible = false;
 
     let bubbleHTML = '';
 
@@ -2323,7 +2639,7 @@ function animate() {
       }
       camper.group.position.set(nextX, 0, nextZ);
 
-      camper.bodyRoot.position.y = lerp(camper.bodyRoot.position.y, 0.2, 0.2);
+      camper.bodyRoot.position.set(0, lerp(camper.bodyRoot.position.y, 0.2, 0.2), 0);
       const swing = Math.sin(elapsed * 11) * 0.45;
       camper.leftLeg.hipPivot.rotation.set(swing, 0, 0);
       camper.leftLeg.kneePivot.rotation.set(Math.max(0, -swing * 0.6), 0, 0);
@@ -2350,6 +2666,34 @@ function animate() {
         camper.arcWalkState = null;
         if (cb) cb();
       }
+    } else if (isTentWalking) {
+      // 1B. Walking Into or Out of the Tent!
+      const tws = camper.tentWalkState;
+      const t = Math.min(1, (now - tws.startTime) / tws.duration);
+      const nextX = lerp(tws.startX, tws.targetX, t);
+      const nextZ = lerp(tws.startZ, tws.targetZ, t);
+      const moveDx = tws.targetX - tws.startX;
+      const moveDz = tws.targetZ - tws.startZ;
+      if (Math.hypot(moveDx, moveDz) > 0.001) {
+        camper.group.rotation.y = Math.atan2(moveDx, moveDz);
+      }
+      camper.group.position.set(nextX, 0, nextZ);
+      camper.bodyRoot.position.set(0, 0.18, 0);
+
+      const swing = Math.sin(elapsed * 11) * 0.42;
+      camper.leftLeg.hipPivot.rotation.set(swing, 0, 0);
+      camper.leftLeg.kneePivot.rotation.set(Math.max(0, -swing * 0.5), 0, 0);
+      camper.rightLeg.hipPivot.rotation.set(-swing, 0, 0);
+      camper.rightLeg.kneePivot.rotation.set(Math.max(0, swing * 0.5), 0, 0);
+
+      bubbleHTML = camper.inTent ? `🏕️ 텐트 안으로 들어가는 중...` : `🔥 모닥불 자리로 나오는 중...`;
+
+      if (t >= 1) {
+        camper.group.rotation.y = tws.lookAngle;
+        const cb = tws.onComplete;
+        camper.tentWalkState = null;
+        if (cb) cb();
+      }
     } else if (isPlacingLog) {
       // 2. Placing Wood into Fire
       const pls = camper.placingLogState;
@@ -2361,7 +2705,7 @@ function animate() {
         camper.group.position.x = lerp(pls.startX, pls.targetX, t);
         camper.group.position.z = lerp(pls.startZ, pls.targetZ, t);
         camper.group.rotation.y = pls.lookAngle;
-        camper.bodyRoot.position.y = lerp(0, 0.2, t);
+        camper.bodyRoot.position.set(0, lerp(0, 0.2, t), 0);
         camper.heldBranchMesh.visible = true;
         targetLeftArmX = -0.55;
         targetRightArmX = -0.55;
@@ -2384,7 +2728,7 @@ function animate() {
         const t = Math.min(1, stepElapsed / 0.65);
         camper.group.position.x = lerp(pls.targetX, pls.startX, t);
         camper.group.position.z = lerp(pls.targetZ, pls.startZ, t);
-        camper.bodyRoot.position.y = lerp(0.2, 0, t);
+        camper.bodyRoot.position.set(0, lerp(0.2, 0, t), 0);
         if (t >= 1) {
           camper.group.position.set(pls.startX, 0, pls.startZ);
           camper.group.rotation.y = pls.lookAngle;
@@ -2392,116 +2736,174 @@ function animate() {
         }
       }
     } else {
-      // 3. Seated Naturally on the Log Facing Forward into the Fire!
+      // 3. Inside Tent OR Seated Naturally on the Log Facing Forward into the Fire!
       const homeSeat = seats[camper.seatIndex] || seats[0];
-      if (!isOffering) {
+      const inTentNow = Boolean(camper.inTent || camper.action === 'sleep');
+
+      if (inTentNow) {
+        const useCustom = isMe
+          ? (state.tentLevel >= 1 || state.hasFurniture || state.hasLights)
+          : true;
+        const tentWorld = getSeatTentWorldPos(camper.seatIndex, useCustom);
+        camper.group.position.set(tentWorld.x, 0, tentWorld.z);
+        camper.group.rotation.y = homeSeat.lookAngle;
+      } else if (!isOffering) {
         camper.group.position.set(homeSeat.x, 0, homeSeat.z);
         camper.group.rotation.y = homeSeat.lookAngle;
       }
 
-      camper.bodyRoot.position.y = lerp(camper.bodyRoot.position.y, 0.0, 0.15);
-      camper.leftLeg.hipPivot.rotation.set(-Math.PI / 2 + 0.08, 0.07, 0);
-      camper.leftLeg.kneePivot.rotation.set(Math.PI / 2 - 0.1, 0, 0);
-      camper.rightLeg.hipPivot.rotation.set(-Math.PI / 2 + 0.08, -0.07, 0);
-      camper.rightLeg.kneePivot.rotation.set(Math.PI / 2 - 0.1, 0, 0);
+      if (camper.action === 'sleep') {
+        // Lying down comfortably on the sleeping bag/mat inside the tent with head on the pillow!
+        camper.bodyRoot.position.x = 0;
+        camper.bodyRoot.position.y = lerp(camper.bodyRoot.position.y, -0.26, 0.15);
+        camper.bodyRoot.position.z = lerp(camper.bodyRoot.position.z || 0, 0.16, 0.15);
 
-      if (isOffering) {
-        camper.bodyRoot.position.y = 0.2;
-        targetTorsoLean = 0.22;
-        targetLeftArmX = -0.48;
-        targetLeftArmY = 0.26;
-        targetRightArmX = -0.48;
-        targetRightArmY = -0.26;
-        if (camper.offeringGiftType === 'coffee') {
-          camper.coffeeGroup.visible = true;
-          bubbleHTML = `☕ "따뜻한 코코아 드세요!"`;
-        } else {
-          camper.skewerGroup.visible = true;
-          bubbleHTML = `🍖 "바비큐 꼬치 드세요!"`;
-        }
-      } else if (isReceiving) {
-        targetTorsoLean = 0.2;
-        targetLeftArmX = -0.42;
-        targetRightArmX = -0.42;
-        camper.coffeeGroup.visible = (camper.action === 'coffee');
-        camper.skewerGroup.visible = (camper.action === 'skewer');
-        bubbleHTML = `🙏 "고맙습니다! 맛있게 먹을게요!"`;
-      } else if (camper.action === 'hands') {
-        camper.handWarmGlow.visible = state.fireLit;
-        camper.handWarmGlow.scale.setScalar(0.85 + Math.sin(elapsed * 5) * 0.18);
-        targetTorsoLean = 0.24;
-        const rub = Math.sin(elapsed * 5.0) * 0.09;
-        targetLeftArmX = -0.48 + rub;
-        targetLeftArmY = 0.15;
-        targetRightArmX = -0.48 - rub;
-        targetRightArmY = -0.15;
-        if (isMe) {
-          bubbleHTML = state.fireLit ? `🤲 불꽃에 손 녹이는 중 (따끈따끈!)` : `🌿 [불 피우기]로 모닥불을 켜보세요!`;
-        }
-      } else if (camper.action === 'skewer') {
-        camper.skewerGroup.visible = true;
-        const roastElapsed = (now - camper.roastStartTime) / 1000;
-        const roastPct = Math.min(100, Math.floor((roastElapsed / 8.0) * 100));
-        const isEating = roastElapsed > 9.5 && roastElapsed < 11.5;
+        const breath = Math.sin(elapsed * 2.0) * 0.04;
+        targetTorsoLean = -Math.PI / 2 + 0.12 + breath;
+        targetHeadX = 0.15;
+        targetLeftArmX = 0.25;
+        targetLeftArmY = 0.38;
+        targetRightArmX = 0.25;
+        targetRightArmY = -0.38;
 
-        if (roastElapsed >= 11.5) {
-          camper.roastStartTime = now;
-          if (isMe && state.myMeat > 0) {
-            state.myMeat = Math.max(0, state.myMeat - 1);
-            saveProgress();
-            updateHUDCounters();
+        // Stretch legs out straight under the blanket!
+        camper.leftLeg.hipPivot.rotation.set(-0.08, 0.05, 0);
+        camper.leftLeg.kneePivot.rotation.set(0.08, 0, 0);
+        camper.rightLeg.hipPivot.rotation.set(-0.08, -0.05, 0);
+        camper.rightLeg.kneePivot.rotation.set(0.08, 0, 0);
+
+        bubbleHTML = `🛌 텐트 안에서 코오~ 꿀잠 자는 중... 💤`;
+      } else {
+        // Sitting posture (on sleeping mat inside tent, or on log bench outside)
+        const targetBodyY = inTentNow ? -0.20 : 0.0;
+        camper.bodyRoot.position.x = 0;
+        camper.bodyRoot.position.y = lerp(camper.bodyRoot.position.y, targetBodyY, 0.15);
+        camper.bodyRoot.position.z = lerp(camper.bodyRoot.position.z || 0, 0.0, 0.15);
+
+        camper.leftLeg.hipPivot.rotation.set(-Math.PI / 2 + 0.08, 0.07, 0);
+        camper.leftLeg.kneePivot.rotation.set(Math.PI / 2 - 0.1, 0, 0);
+        camper.rightLeg.hipPivot.rotation.set(-Math.PI / 2 + 0.08, -0.07, 0);
+        camper.rightLeg.kneePivot.rotation.set(Math.PI / 2 - 0.1, 0, 0);
+
+        if (isOffering) {
+          camper.bodyRoot.position.y = 0.2;
+          targetTorsoLean = 0.22;
+          targetLeftArmX = -0.48;
+          targetLeftArmY = 0.26;
+          targetRightArmX = -0.48;
+          targetRightArmY = -0.26;
+          if (camper.offeringGiftType === 'coffee') {
+            camper.coffeeGroup.visible = true;
+            bubbleHTML = `☕ "따뜻한 코코아 드세요!"`;
+          } else {
+            camper.skewerGroup.visible = true;
+            bubbleHTML = `🍖 "바비큐 꼬치 드세요!"`;
           }
-        }
-
-        if (isEating) {
-          targetTorsoLean = 0.06;
-          targetRightArmX = -0.78;
-          targetRightArmY = 0.25;
-          camper.skewerGroup.position.set(0.04, 0.76, 0.16);
-          bubbleHTML = `😋 노릇한 바비큐 꼬치 냠냠! 최고예요!`;
-        } else {
+        } else if (isReceiving) {
+          targetTorsoLean = 0.2;
+          targetLeftArmX = -0.42;
+          targetRightArmX = -0.42;
+          camper.coffeeGroup.visible = (camper.action === 'coffee');
+          camper.skewerGroup.visible = (camper.action === 'skewer');
+          bubbleHTML = `🙏 "고맙습니다! 맛있게 먹을게요!"`;
+        } else if (camper.action === 'bento') {
+          // Eating 3D Multi-Compartment Camping Bento Box with Chopsticks!
+          camper.bentoGroup.visible = true;
+          camper.chopstickGroup.visible = true;
+          targetTorsoLean = 0.15;
+          // Left hand holds the bento box steadily
+          targetLeftArmX = -0.44;
+          targetLeftArmY = 0.22;
+          // Right hand moves chopsticks between the bento box and mouth!
+          const eatPhase = Math.sin(elapsed * 3.8);
+          const toMouth = Math.max(0, eatPhase);
+          targetRightArmX = -0.42 - toMouth * 0.42;
+          targetRightArmY = -0.15 - toMouth * 0.20;
+          targetHeadX = toMouth * 0.14;
+          bubbleHTML = inTentNow
+            ? `🍱 텐트 안에서 맛있는 도시락 냠냠! 😋`
+            : `🍱 모닥불 보며 캠핑 도시락 냠냠! 😋`;
+        } else if (camper.action === 'hands') {
+          camper.handWarmGlow.visible = state.fireLit && !inTentNow;
+          camper.handWarmGlow.scale.setScalar(0.85 + Math.sin(elapsed * 5) * 0.18);
           targetTorsoLean = 0.24;
-          targetRightArmX = -0.42 + Math.sin(elapsed * 3.5) * 0.05;
-          targetRightArmY = -0.06;
-          camper.skewerGroup.position.set(0.14, 0.56, 0.36);
-
-          const ratio = roastPct / 100;
-          camper.meatChunks.forEach((chunk) => {
-            chunk.material.color.lerpColors(
-              new THREE.Color(0xd9483b), // Raw red meat
-              new THREE.Color(0x8c3b14), // Golden-brown roasted BBQ!
-              ratio
-            );
-          });
-
+          const rub = Math.sin(elapsed * 5.0) * 0.09;
+          targetLeftArmX = -0.48 + rub;
+          targetLeftArmY = 0.15;
+          targetRightArmX = -0.48 - rub;
+          targetRightArmY = -0.15;
           if (isMe) {
-            bubbleHTML = roastPct < 100
-              ? `🍖 꼬치 굽기 ${roastPct}% <span class="roast-bar"><span class="roast-fill" style="width:${roastPct}%"></span></span>`
-              : `✨ 바비큐 꼬치 완성! 맛있는 냄새!`;
+            if (inTentNow) {
+              bubbleHTML = `🏕️ 아늑한 내 텐트 안에서 쉬는 중!`;
+            } else {
+              bubbleHTML = state.fireLit ? `🤲 불꽃에 손 녹이는 중 (따끈따끈!)` : `🌿 [불 피우기]로 모닥불을 켜보세요!`;
+            }
           }
+        } else if (camper.action === 'skewer') {
+          camper.skewerGroup.visible = true;
+          const roastElapsed = (now - camper.roastStartTime) / 1000;
+          const roastPct = Math.min(100, Math.floor((roastElapsed / 8.0) * 100));
+          const isEating = roastElapsed > 9.5 && roastElapsed < 11.5;
+
+          if (roastElapsed >= 11.5) {
+            camper.roastStartTime = now;
+            if (isMe && state.myMeat > 0) {
+              state.myMeat = Math.max(0, state.myMeat - 1);
+              saveProgress();
+              updateHUDCounters();
+            }
+          }
+
+          if (isEating) {
+            targetTorsoLean = 0.06;
+            targetRightArmX = -0.78;
+            targetRightArmY = 0.25;
+            camper.skewerGroup.position.set(0.04, 0.76, 0.16);
+            bubbleHTML = `😋 노릇한 바비큐 꼬치 냠냠! 최고예요!`;
+          } else {
+            targetTorsoLean = 0.24;
+            targetRightArmX = -0.42 + Math.sin(elapsed * 3.5) * 0.05;
+            targetRightArmY = -0.06;
+            camper.skewerGroup.position.set(0.14, 0.56, 0.36);
+
+            const ratio = roastPct / 100;
+            camper.meatChunks.forEach((chunk) => {
+              chunk.material.color.lerpColors(
+                new THREE.Color(0xd9483b), // Raw red meat
+                new THREE.Color(0x8c3b14), // Golden-brown roasted BBQ!
+                ratio
+              );
+            });
+
+            if (isMe) {
+              bubbleHTML = roastPct < 100
+                ? `🍖 꼬치 굽기 ${roastPct}% <span class="roast-bar"><span class="roast-fill" style="width:${roastPct}%"></span></span>`
+                : `✨ 바비큐 꼬치 완성! 맛있는 냄새!`;
+            }
+          }
+        } else if (camper.action === 'coffee') {
+          camper.coffeeGroup.visible = true;
+          camper.steamRings.forEach((st, idx) => {
+            const cycle = (elapsed * 0.9 + idx * 0.33) % 1;
+            st.position.y = 0.14 + cycle * 0.32;
+            st.scale.setScalar(0.7 + cycle * 0.8);
+            st.material.opacity = (1 - cycle) * 0.65;
+          });
+          const isSipping = Math.sin(elapsed * 1.4) > 0.65;
+          const sipAngle = isSipping ? -0.32 : 0.0;
+          targetLeftArmX = -0.36 + sipAngle;
+          targetLeftArmY = 0.24;
+          targetRightArmX = -0.36 + sipAngle;
+          targetRightArmY = -0.24;
+          if (isMe) bubbleHTML = isSipping ? `☕ 후루룩~ 달콤한 코코아!` : `☕ 따뜻한 보온병 코코아`;
+        } else if (camper.action === 'sparkler') {
+          camper.sparklerGroup.visible = true;
+          const wave = Math.sin(elapsed * 4.5) * 0.28;
+          targetLeftArmX = -0.45 + Math.cos(elapsed * 4.5) * 0.12;
+          targetLeftArmY = wave;
+          camper.spCore.scale.setScalar(0.85 + Math.random() * 0.75);
+          if (isMe) bubbleHTML = `🎇 반짝반짝 불꽃놀이!`;
         }
-      } else if (camper.action === 'coffee') {
-        camper.coffeeGroup.visible = true;
-        camper.steamRings.forEach((st, idx) => {
-          const cycle = (elapsed * 0.9 + idx * 0.33) % 1;
-          st.position.y = 0.14 + cycle * 0.32;
-          st.scale.setScalar(0.7 + cycle * 0.8);
-          st.material.opacity = (1 - cycle) * 0.65;
-        });
-        const isSipping = Math.sin(elapsed * 1.4) > 0.65;
-        const sipAngle = isSipping ? -0.32 : 0.0;
-        targetLeftArmX = -0.36 + sipAngle;
-        targetLeftArmY = 0.24;
-        targetRightArmX = -0.36 + sipAngle;
-        targetRightArmY = -0.24;
-        if (isMe) bubbleHTML = isSipping ? `☕ 후루룩~ 달콤한 코코아!` : `☕ 따뜻한 보온병 코코아`;
-      } else if (camper.action === 'sparkler') {
-        camper.sparklerGroup.visible = true;
-        const wave = Math.sin(elapsed * 4.5) * 0.28;
-        targetLeftArmX = -0.45 + Math.cos(elapsed * 4.5) * 0.12;
-        targetLeftArmY = wave;
-        camper.spCore.scale.setScalar(0.85 + Math.random() * 0.75);
-        if (isMe) bubbleHTML = `🎇 반짝반짝 불꽃놀이!`;
       }
     }
 
@@ -2526,7 +2928,7 @@ function animate() {
       if (bubbleHTML && !state.zenMode && camper.group.visible) {
         camper.bubbleEl.innerHTML = bubbleHTML;
         const topPos = camper.group.position.clone();
-        topPos.y += 2.32;
+        topPos.y += camper.action === 'sleep' ? 1.45 : (camper.inTent ? 1.85 : 2.32);
         projectToScreen(topPos, camper.bubbleEl);
         camper.bubbleEl.style.opacity = '1';
       } else {
@@ -2613,29 +3015,46 @@ window.addEventListener('pointerup', (e) => {
     }
   }
 
+  // 3B. Clicked my 3D Tent? -> Enter or exit the tent!
+  const tentHits = raycaster.intersectObjects(tentClickMeshes, false);
+  if (tentHits.length > 0) {
+    const tData = tentHits[0].object.userData;
+    if (tData.seatIndex === state.mySeatIndex) {
+      triggerCampfireAction('enterTent');
+      return;
+    }
+  }
+
   // 4. Clicked a Log Bench? -> Walk around perimeter (never through fire!) and sit facing forward!
   const seatHits = raycaster.intersectObjects(seatClickMeshes, false);
   if (seatHits.length > 0) {
     const newSeat = seatHits[0].object.userData.seatIndex;
-    if (typeof newSeat === 'number' && newSeat !== state.mySeatIndex) {
-      state.mySeatIndex = newSeat;
-      camControl.orbitOffset = 0; // Camera smoothly follows to your new seat!
-      const myCamper = camperMeshes.get(state.clientId);
-      const targetS = seats[newSeat];
-      if (myCamper && targetS) {
-        startSafePerimeterWalk(myCamper, targetS.x, targetS.z, () => {
-          myCamper.group.position.set(targetS.x, 0, targetS.z);
-          myCamper.group.rotation.y = targetS.lookAngle;
+    if (typeof newSeat === 'number') {
+      if (newSeat === state.mySeatIndex && state.inTent) {
+        triggerCampfireAction('enterTent');
+        return;
+      }
+      if (newSeat !== state.mySeatIndex) {
+        const myCamper = camperMeshes.get(state.clientId);
+        exitTentIfNeeded(myCamper);
+        state.mySeatIndex = newSeat;
+        camControl.orbitOffset = 0; // Camera smoothly follows to your new seat!
+        const targetS = seats[newSeat];
+        if (myCamper && targetS) {
+          startSafePerimeterWalk(myCamper, targetS.x, targetS.z, () => {
+            myCamper.group.position.set(targetS.x, 0, targetS.z);
+            myCamper.group.rotation.y = targetS.lookAngle;
+            updateHUDCounters();
+            syncTentsForUsers();
+            sendServerAction({ type: 'moveSeat', seatIndex: newSeat });
+          });
+        } else {
           updateHUDCounters();
           syncTentsForUsers();
           sendServerAction({ type: 'moveSeat', seatIndex: newSeat });
-        });
-      } else {
-        updateHUDCounters();
-        syncTentsForUsers();
-        sendServerAction({ type: 'moveSeat', seatIndex: newSeat });
+        }
+        showCenterNotice('👣 모닥불 둘레를 따라 선택한 통나무 자리로 이동합니다!');
       }
-      showCenterNotice('👣 모닥불 둘레를 따라 선택한 통나무 자리로 이동합니다!');
     }
   }
 });

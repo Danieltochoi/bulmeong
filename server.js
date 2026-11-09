@@ -56,7 +56,8 @@ function getPublicRoomSnapshot(roomState) {
       tentLevel: c.tentLevel || 0,
       tentColor: c.tentColor || '#d48b45',
       hasFurniture: Boolean(c.hasFurniture),
-      hasLights: Boolean(c.hasLights)
+      hasLights: Boolean(c.hasLights),
+      inTent: Boolean(c.inTent)
     });
   }
 
@@ -199,6 +200,7 @@ const server = http.createServer((req, res) => {
           if (data.type === 'pose' && data.action) {
             client.action = data.action;
             if (data.posture) client.posture = data.posture;
+            if (typeof data.inTent === 'boolean') client.inTent = data.inTent;
             broadcastToRoom(roomState, 'sync', getPublicRoomSnapshot(roomState));
           } else if (data.type === 'posture' && data.posture) {
             client.posture = data.posture;
